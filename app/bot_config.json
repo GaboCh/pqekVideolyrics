@@ -1,0 +1,13 @@
+{
+    "symbol": "BTCUSDT",
+    "interval": "15m",
+    "tp_percent": 1.5,
+    "sl_percent": 0.5,
+    "rsi_overbought": 70,
+    "rsi_oversold": 30,
+    "use_rsi": true,
+    "use_ema": true,
+    "use_bollinger": false,
+    "paper_balance": 100.0,
+    "live_capital": 0.0
+}

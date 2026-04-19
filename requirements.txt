@@ -1,0 +1,10 @@
+# requirements.txt
+gradio
+python-dotenv
+pandas
+numpy
+binance-connector
+python-binance
+requests
+plotly
+pandas-ta

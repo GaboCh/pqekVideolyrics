@@ -1,0 +1,9 @@
+{
+  "source_directories": [
+    "src",
+    "app"
+  ],
+  "search_path": [
+    "entorno/Lib/site-packages"
+  ]
+}
