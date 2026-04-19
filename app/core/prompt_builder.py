@@ -6,14 +6,23 @@ import json
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "templates")
 
 STYLE_TO_TEMPLATE = {
-    "Space / Cosmos":        "space_cosmos.html",
-    "Neon Glow":             "neon_glow.html",
-    "Grunge Brush (CSS)":    "grunge_brush.html",
-    "Zoom Punch (CSS)":      "zoom_punch.html",
-    "Pixel Retro (Mario)":   "pixel_retro.html",
-    "Metal Slug (Arcade)":   "metal_slug.html",
-    "Snow Globe (CSS)":      "snow_globe.html",
-    "🎵 Mix (Multi-estilo)": "mix_template.html",
+    "Space / Cosmos":             "space_cosmos.html",
+    "Neon Glow":                  "neon_glow.html",
+    "Grunge Brush (CSS)":         "grunge_brush.html",
+    "Zoom Punch (CSS)":           "zoom_punch.html",
+    "Pixel Retro (Mario)":        "pixel_retro.html",
+    "Metal Slug (Arcade)":        "metal_slug.html",
+    "Snow Globe (CSS)":           "snow_globe.html",
+    "🎵 Mix (Multi-estilo)":      "mix_template.html",
+    # Photo Karaoke — need cover image
+    "📸 Karaoke + Foto (Landscape)": "photo_karaoke_landscape.html",
+    "📸 Karaoke + Foto (Portrait)": "photo_karaoke_portrait.html",
+}
+
+# Styles that require a cover image upload
+PHOTO_TEMPLATES = {
+    "📸 Karaoke + Foto (Landscape)",
+    "📸 Karaoke + Foto (Portrait)",
 }
 
 
@@ -21,9 +30,16 @@ STYLE_TO_TEMPLATE = {
 class PromptBuilder:
 
     @staticmethod
-    def fill_template(template_path: str, song_name: str, artist_name: str, lyrics: str) -> str | None:
+    def fill_template(
+        template_path: str,
+        song_name: str,
+        artist_name: str,
+        lyrics: str,
+        cover_image_path: str | None = None
+    ) -> str | None:
         """
         Fill a pre-made HTML template with song data.
+        Optionally embed a cover image as base64.
         """
         try:
             with open(template_path, "r", encoding="utf-8") as f:
@@ -36,18 +52,38 @@ class PromptBuilder:
             html = html.replace("{{ARTIST_NAME}}", artist_name or "")
             html = html.replace("{{LYRICS_JSON}}", lyrics_array_content)
             html = html.replace("{{FIRST_LINE}}", lines[0] if lines else "")
+
+            # Embed cover image as base64 data URL
+            if cover_image_path and os.path.isfile(cover_image_path):
+                import base64, mimetypes
+                mime, _ = mimetypes.guess_type(cover_image_path)
+                mime = mime or "image/jpeg"
+                with open(cover_image_path, "rb") as img_f:
+                    b64 = base64.b64encode(img_f.read()).decode("utf-8")
+                data_url = f"data:{mime};base64,{b64}"
+                html = html.replace("{{COVER_IMAGE}}", data_url)
+            else:
+                # Placeholder grey gradient if no image provided
+                html = html.replace("{{COVER_IMAGE}}", "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23222'/%3E%3Ctext x='200' y='210' text-anchor='middle' fill='%23555' font-size='20' font-family='sans-serif'%3ESubir foto%3C/text%3E%3C/svg%3E")
+
             return html
         except Exception as e:
             return None
 
     @staticmethod
-    def get_template_html(lyrics: str, song_name: str, artist_name: str, style_name: str) -> str | None:
+    def get_template_html(
+        lyrics: str,
+        song_name: str,
+        artist_name: str,
+        style_name: str,
+        cover_image_path: str | None = None
+    ) -> str | None:
         """
         Try to find and fill a template for the given style.
         Returns filled HTML or None if no template exists for this style.
         """
-        # Special handling for Mix mode: auto-tag lines by section
-        if style_name == "\U0001f3b5 Mix (Multi-estilo)":
+        # Mix mode: auto-tag lines by section
+        if style_name == "🎵 Mix (Multi-estilo)":
             tagged_lyrics = PromptBuilder._tag_lyrics_for_mix(lyrics)
             template_path = os.path.join(TEMPLATES_DIR, "mix_template.html")
             return PromptBuilder.fill_template(template_path, song_name, artist_name, tagged_lyrics)
@@ -56,7 +92,10 @@ class PromptBuilder:
         if not template_file:
             return None
         template_path = os.path.join(TEMPLATES_DIR, template_file)
-        return PromptBuilder.fill_template(template_path, song_name, artist_name, lyrics)
+        return PromptBuilder.fill_template(
+            template_path, song_name, artist_name, lyrics,
+            cover_image_path=cover_image_path
+        )
 
     @staticmethod
     def _tag_lyrics_for_mix(lyrics: str) -> str:

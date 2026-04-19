@@ -1,377 +1,956 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<title>Lyric Video — Metal Slug</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@900&display=swap" rel="stylesheet">
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated}
-  html,body{width:100%;height:100%;overflow:hidden;background:#1a0e00}
+  <meta charset="UTF-8">
+  <title>Lyric Video — Metal Slug</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      image-rendering: pixelated
+    }
 
-  /* ── SKY ── */
-  #sky{
-    position:fixed;inset:0;z-index:0;
-    background:linear-gradient(180deg,#4a2800 0%,#7a3800 35%,#b05a00 65%,#d4820a 100%);
-  }
-  /* Sun */
-  #sky::before{
-    content:'';position:absolute;
-    width:80px;height:80px;
-    background:#ffcc00;
-    border-radius:50%;
-    top:10%;right:15%;
-    box-shadow:0 0 40px 20px rgba(255,200,0,0.4);
-  }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a3a1a
+    }
 
-  /* ── Mountains BG ── */
-  .mountain{
-    position:fixed;bottom:120px;z-index:1;
-    background:#2d1a00;
-  }
+    /* ── SKY (día azul como en la imagen) ── */
+    #sky {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(180deg, #5888b0 0%, #7aadcc 40%, #a8d4e8 70%, #c8e8f0 100%);
+    }
 
-  /* ── Ground layers ── */
-  #ground-far{
-    position:fixed;bottom:100px;left:0;right:0;height:30px;z-index:2;
-    background:#59380a;
-    border-top:4px solid #7c5218;
-  }
-  #ground-mid{
-    position:fixed;bottom:70px;left:0;right:0;height:35px;z-index:3;
-    background:#3d2200;
-    border-top:4px solid #5a3300;
-  }
-  #ground{
-    position:fixed;bottom:0;left:0;right:0;height:72px;z-index:4;
-    background:#2a1500;
-    border-top:6px solid #3d2200;
-  }
-  #ground::before{
-    content:'';position:absolute;top:0;left:0;right:0;height:6px;
-    background:repeating-linear-gradient(90deg,#4a2a00 0,#4a2a00 16px,#3d2200 16px,#3d2200 32px);
-  }
+    /* ── Nubes pixel ── */
+    .cloud {
+      position: fixed;
+      z-index: 1;
+      background: #e8f4ff;
+      border-radius: 2px;
+      opacity: 0.85;
+    }
 
-  /* ── Ruins / Columns ── */
-  .ruin{
-    position:fixed;bottom:68px;z-index:3;
-    background:#1a0d00;
-    border-left:3px solid #2e1800;border-right:3px solid #2e1800;
-  }
-  .ruin::before{
-    content:'';position:absolute;top:-12px;left:-6px;right:-6px;height:12px;
-    background:#1a0d00;
-    border:3px solid #2e1800;
-    border-bottom:none;
-  }
+    .cloud::before,
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: #e8f4ff;
+      border-radius: 2px;
+    }
 
-  /* ── Tank (CSS pixel art) ── */
-  #tank{
-    position:fixed;bottom:68px;left:8%;z-index:10;
-    transform-origin:left bottom;
-  }
-  .tank-body{
-    width:100px;height:40px;background:#5c7a2e;
-    border:3px solid #3d5220;
-    position:relative;
-  }
-  .tank-body::before{/* turret */
-    content:'';position:absolute;
-    top:-22px;left:20px;
-    width:50px;height:20px;background:#4a6424;
-    border:3px solid #3d5220;
-  }
-  .tank-barrel{
-    position:absolute;top:-18px;left:56px;
-    width:44px;height:8px;background:#3d5220;
-    border:2px solid #2a3a14;
-    transform-origin:left center;
-  }
-  .tank-track{
-    width:112px;height:16px;background:#2a1800;
-    border:3px solid #3d2800;margin-top:0;margin-left:-6px;
-    background:repeating-linear-gradient(90deg,#2a1800 0,#2a1800 10px,#1a1000 10px,#1a1000 20px);
-  }
-  /* Cannon fire */
-  .muzzle-flash{
-    position:absolute;top:-24px;left:88px;
-    width:20px;height:12px;
-    background:#ffaa00;
-    clip-path:polygon(0 50%,40% 0,100% 50%,40% 100%);
-    opacity:0;z-index:11;
-  }
+    .cloud::before {
+      width: 50%;
+      height: 140%;
+      top: -20%;
+      left: 20%;
+    }
 
-  /* ── Helicopter ── */
-  #heli{
-    position:fixed;top:12%;left:-200px;z-index:8;
-  }
-  .heli-body{
-    width:80px;height:32px;background:#4a5e1e;
-    border:3px solid #323e14;border-radius:4px;
-    position:relative;
-  }
-  .heli-tail{
-    position:absolute;right:-40px;top:8px;
-    width:40px;height:8px;background:#3d5220;
-    border:2px solid #2a3a14;
-  }
-  .heli-rotor{
-    position:absolute;top:-6px;left:10px;
-    width:60px;height:6px;background:#5a7a2e;
-    border:2px solid #3d5220;
-    transform-origin:center;
-    animation:rotor 0.08s linear infinite;
-  }
-  @keyframes rotor{to{transform:rotate(360deg)}}
-  .heli-gun{
-    position:absolute;bottom:-8px;left:20px;
-    width:24px;height:6px;background:#2a3a14;
-    border:2px solid #1a2a0a;
-  }
+    .cloud::after {
+      width: 35%;
+      height: 120%;
+      top: -10%;
+      right: 10%;
+    }
 
-  /* ── Explosion CSS ── */
-  .explosion{
-    position:fixed;z-index:20;
-    pointer-events:none;
-    width:0;height:0;
-    opacity:0;
-  }
-  .exp-ring{
-    position:absolute;
-    border-radius:50%;
-    transform:translate(-50%,-50%);
-    background:radial-gradient(circle,#fff 0%,#ffff00 20%,#ff6600 50%,rgba(200,50,0,0) 100%);
-  }
+    /* ── Follaje BG (fondo selva densa) ── */
+    #jungle-bg {
+      position: fixed;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      height: 55%;
+      z-index: 1;
+      background:
+        repeating-linear-gradient(180deg,
+          transparent 0px, transparent 30px,
+          rgba(0, 60, 0, 0.08) 30px, rgba(0, 60, 0, 0.08) 31px),
+        linear-gradient(180deg,
+          #1a4a10 0%, #2d6e1a 25%, #3a8020 50%, #2d6e1a 75%, #1e5514 100%);
+    }
 
-  /* ── Soldier sprites (CSS box-shadow pixel art) ── */
-  .soldier{
-    position:fixed;bottom:98px;z-index:9;
-    width:8px;height:8px;background:transparent;
-  }
-  /* soldier-a: running right */
-  .sol-a::before,.sol-a::after{content:'';position:absolute;width:8px;height:8px;}
-  /* We draw soldiers using a single inline pixel via generated content box-shadow chains */
+    /* ── Árboles (tronco + raíces + copa) ── */
+    .tree {
+      position: fixed;
+      z-index: 4;
+      bottom: 62px;
+    }
 
-  /* ── HUD ── */
-  #hud{
-    position:fixed;top:12px;left:16px;z-index:30;
-    color:#ffcc00;font-family:'VT323',monospace;font-size:clamp(1rem,2.5vw,1.5rem);
-    line-height:2;
-    text-shadow:2px 2px 0 #000;
-    opacity:0;
-  }
+    .tree-trunk {
+      background: #3d2200;
+      border-left: 3px solid #1a0e00;
+      border-right: 3px solid #5a3800;
+      margin: 0 auto;
+    }
 
-  /* ── Lyric display ── */
-  #lyric-wrap{
-    position:fixed;
-    bottom:clamp(90px,14vh,160px);
-    left:50%;transform:translateX(-50%);
-    z-index:25;
-    width:min(820px,90vw);
-    text-align:center;
-  }
-  #lyric{
-    display:inline-block;
-    font-family:'Orbitron',sans-serif;
-    font-size:clamp(1.8rem,5vw,5rem);
-    font-weight:900;
-    letter-spacing:0.06em;
-    color:#ffee00;
-    text-shadow:
-      3px 3px 0 #000,
-      -2px -2px 0 #000,
-      0 0 20px rgba(255,200,0,0.6);
-    background:rgba(0,0,0,0.5);
-    padding:clamp(8px,1.5vw,20px) clamp(12px,3vw,40px);
-    border:3px solid rgba(255,200,0,0.4);
-    opacity:0;
-    position:relative;
-  }
-  /* Corner decorations */
-  #lyric::before,#lyric::after{
-    content:'';position:absolute;
-    width:12px;height:12px;
-    border-color:#ffee00;border-style:solid;
-    opacity:0.6;
-  }
-  #lyric::before{top:-3px;left:-3px;border-width:3px 0 0 3px;}
-  #lyric::after{bottom:-3px;right:-3px;border-width:0 3px 3px 0;}
+    .tree-root-l,
+    .tree-root-r {
+      position: absolute;
+      bottom: 0;
+      width: 10px;
+      height: 22px;
+      background: #3d2200;
+      border: 2px solid #1a0e00;
+    }
 
-  /* ── Title screen ── */
-  #title-screen{
-    position:fixed;inset:0;z-index:60;
-    background:#000;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
-  }
-  #ts-title{
-    font-family:'Orbitron',sans-serif;font-weight:900;
-    font-size:clamp(2rem,6vw,5rem);
-    color:#ffee00;text-shadow:4px 4px 0 #cc0000;
-    text-align:center;padding:0 20px;
-    animation:scanline 0.08s step-end infinite alternate;
-  }
-  @keyframes scanline{0%{opacity:1}100%{opacity:0.9}}
-  #ts-sub{
-    font-family:'VT323',monospace;font-size:clamp(1.4rem,3vw,2.2rem);
-    color:#ff4400;letter-spacing:0.15em;
-  }
-  #ts-press{
-    font-family:'VT323',monospace;font-size:clamp(1rem,2vw,1.5rem);
-    color:#aaa;animation:blink2 1s step-end infinite;
-  }
-  @keyframes blink2{0%,100%{opacity:1}50%{opacity:0}}
+    .tree-root-l {
+      left: -8px;
+      transform: skewX(-15deg);
+      transform-origin: top right;
+    }
 
-  /* ── Smoke particles ── */
-  .smoke{
-    position:fixed;z-index:6;pointer-events:none;
-    border-radius:50%;background:rgba(80,50,20,0.35);
-    opacity:0;
-  }
-</style>
+    .tree-root-r {
+      right: -8px;
+      transform: skewX(15deg);
+      transform-origin: top left;
+    }
+
+    .tree-canopy {
+      position: absolute;
+      background: #2a6e14;
+      border: 3px solid #1a4a0a;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tree-canopy::before {
+      content: '';
+      position: absolute;
+      background: #3a8020;
+      border: 2px solid #1a4a0a;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tree-canopy::after {
+      content: '';
+      position: absolute;
+      background: #226612;
+      border: 2px solid #1a4a0a;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 8px;
+    }
+
+    /* ── Ruinas / Columnas de piedra con cara tallada ── */
+    .ruin-col {
+      position: fixed;
+      bottom: 62px;
+      z-index: 5;
+      background: #7a7060;
+    }
+
+    .ruin-col::before {
+      /* capitel */
+      content: '';
+      position: absolute;
+      top: -14px;
+      left: -5px;
+      right: -5px;
+      height: 14px;
+      background: #6a6050;
+      border-top: 3px solid #8a8070;
+      border-left: 2px solid #5a5040;
+      border-right: 2px solid #9a9080;
+    }
+
+    .ruin-col::after {
+      /* base */
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: -6px;
+      right: -6px;
+      height: 8px;
+      background: #6a6050;
+      border-bottom: 3px solid #4a4030;
+    }
+
+    /* Cara tallada en la columna grande */
+    .ruin-face {
+      position: fixed;
+      z-index: 5;
+      bottom: 62px;
+      background: #6a6050;
+      border-left: 4px solid #4a4030;
+      border-right: 4px solid #8a8070;
+    }
+
+    .ruin-face::before {
+      /* ojos tallados */
+      content: '';
+      position: absolute;
+      top: 25%;
+      left: 15%;
+      right: 15%;
+      height: 20%;
+      background:
+        linear-gradient(#4a3a28, #4a3a28) 15% 0/30% 100% no-repeat,
+        linear-gradient(#4a3a28, #4a3a28) 55% 0/30% 100% no-repeat;
+    }
+
+    .ruin-face::after {
+      /* nariz + boca */
+      content: '';
+      position: absolute;
+      top: 55%;
+      left: 30%;
+      right: 30%;
+      height: 30%;
+      background:
+        linear-gradient(#3a2a18, #3a2a18) 35% 0/30% 30% no-repeat,
+        linear-gradient(#3a2a18, #3a2a18) 10% 60%/80% 40% no-repeat;
+    }
+
+    /* ── Suelo capas (estilo plataformas MS) ── */
+    #ground-far {
+      position: fixed;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      height: 24px;
+      z-index: 2;
+      background: #3a5a2a;
+      border-top: 4px solid #5a8040;
+    }
+
+    #ground-mid {
+      position: fixed;
+      bottom: 56px;
+      left: 0;
+      right: 0;
+      height: 28px;
+      z-index: 3;
+      background: #5a4a30;
+      border-top: 4px solid #7a6848;
+    }
+
+    /* Hierba en el borde */
+    #ground-mid::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background:
+        repeating-linear-gradient(90deg,
+          #4a8828 0, #4a8828 12px, #3a7020 12px, #3a7020 16px,
+          #5a9830 16px, #5a9830 24px, #3a7020 24px, #3a7020 28px);
+    }
+
+    #ground {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 58px;
+      z-index: 4;
+      background: #4a3820;
+      border-top: 5px solid #6a5838;
+    }
+
+    /* Adoquines del suelo */
+    #ground::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 16px;
+      background:
+        repeating-linear-gradient(90deg,
+          #5a4828 0, #5a4828 30px, #4a3820 30px, #4a3820 32px),
+        repeating-linear-gradient(180deg,
+          transparent 0, transparent 14px, #3a2a14 14px, #3a2a14 16px);
+    }
+
+    #ground::after {
+      /* hierba sobre el suelo */
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background:
+        repeating-linear-gradient(90deg,
+          #5aaa30 0, #5aaa30 8px, #4a9828 8px, #4a9828 14px,
+          #6aba38 14px, #6aba38 20px, #4a9828 20px, #4a9828 24px);
+    }
+
+    /* ── Plataforma media (como en la imagen) ── */
+    .platform {
+      position: fixed;
+      z-index: 6;
+      background: #5a4828;
+      border-top: 5px solid #7a6848;
+      border-bottom: 4px solid #3a2a14;
+    }
+
+    .platform::before {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: repeating-linear-gradient(90deg, #5aaa30 0, #5aaa30 8px, #4a9828 8px, #4a9828 16px);
+    }
+
+    /* ── Tank (CSS pixel art) ── */
+    #tank {
+      position: fixed;
+      bottom: 58px;
+      left: 8%;
+      z-index: 10;
+      transform-origin: left bottom;
+    }
+
+    .tank-body {
+      width: 100px;
+      height: 40px;
+      background: linear-gradient(180deg, #6a8a3e 0%, #5c7a2e 60%, #4a6420 100%);
+      border: 3px solid #3d5220;
+      position: relative;
+    }
+
+    /* Detalle de panel en cuerpo */
+    .tank-body::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      width: 30px;
+      height: 12px;
+      border: 2px solid #3d5220;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .tank-body::before {
+      /* turret */
+      content: '';
+      position: absolute;
+      top: -22px;
+      left: 20px;
+      width: 50px;
+      height: 20px;
+      background: linear-gradient(180deg, #5a7434 0%, #4a6424 100%);
+      border: 3px solid #3d5220;
+    }
+
+    .tank-barrel {
+      position: absolute;
+      top: -18px;
+      left: 56px;
+      width: 44px;
+      height: 8px;
+      background: linear-gradient(180deg, #4a5e28 0%, #3d5220 100%);
+      border: 2px solid #2a3a14;
+      transform-origin: left center;
+    }
+
+    .tank-track {
+      width: 112px;
+      height: 16px;
+      margin-top: 0;
+      margin-left: -6px;
+      background: repeating-linear-gradient(90deg, #2a1800 0, #2a1800 10px, #1a1000 10px, #1a1000 20px);
+      border: 3px solid #3d2800;
+      border-radius: 2px;
+    }
+
+    .tank-track::before {
+      /* ruedas */
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 4px;
+      width: 100px;
+      height: 100%;
+      background:
+        radial-gradient(circle 4px at 10px 50%, #444 60%, transparent 100%),
+        radial-gradient(circle 4px at 30px 50%, #444 60%, transparent 100%),
+        radial-gradient(circle 4px at 50px 50%, #444 60%, transparent 100%),
+        radial-gradient(circle 4px at 70px 50%, #444 60%, transparent 100%),
+        radial-gradient(circle 4px at 90px 50%, #444 60%, transparent 100%);
+    }
+
+    .muzzle-flash {
+      position: absolute;
+      top: -24px;
+      left: 88px;
+      width: 20px;
+      height: 12px;
+      background: #ffaa00;
+      clip-path: polygon(0 50%, 40% 0, 100% 50%, 40% 100%);
+      opacity: 0;
+      z-index: 11;
+    }
+
+    /* ── Helicóptero ── */
+    #heli {
+      position: fixed;
+      top: 12%;
+      left: -200px;
+      z-index: 8;
+    }
+
+    .heli-body {
+      width: 80px;
+      height: 32px;
+      background: linear-gradient(180deg, #5a6e2e 0%, #4a5e1e 100%);
+      border: 3px solid #323e14;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .heli-body::after {
+      /* ventana */
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      width: 18px;
+      height: 14px;
+      background: rgba(100, 160, 200, 0.5);
+      border: 2px solid #323e14;
+    }
+
+    .heli-tail {
+      position: absolute;
+      right: -40px;
+      top: 8px;
+      width: 40px;
+      height: 8px;
+      background: #3d5220;
+      border: 2px solid #2a3a14;
+    }
+
+    .heli-tail::after {
+      /* rotor trasero */
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: -6px;
+      width: 4px;
+      height: 20px;
+      background: #4a6424;
+      border: 1px solid #2a3a14;
+      transform-origin: center;
+      animation: rotorV 0.06s linear infinite;
+    }
+
+    @keyframes rotorV {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .heli-rotor {
+      position: absolute;
+      top: -6px;
+      left: 10px;
+      width: 60px;
+      height: 6px;
+      background: #5a7a2e;
+      border: 2px solid #3d5220;
+      transform-origin: center;
+      animation: rotor 0.08s linear infinite;
+    }
+
+    @keyframes rotor {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .heli-gun {
+      position: absolute;
+      bottom: -8px;
+      left: 20px;
+      width: 24px;
+      height: 6px;
+      background: #2a3a14;
+      border: 2px solid #1a2a0a;
+    }
+
+    /* ── Explosión CSS ── */
+    .explosion {
+      position: fixed;
+      z-index: 20;
+      pointer-events: none;
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+
+    .exp-ring {
+      position: absolute;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, #fff 0%, #ffff00 20%, #ff6600 50%, rgba(200, 50, 0, 0) 100%);
+    }
+
+    /* ── HUD estilo Metal Slug ── */
+    #hud {
+      position: fixed;
+      top: 6px;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 4px 12px;
+      color: #ffffff;
+      font-family: 'VT323', monospace;
+      font-size: clamp(0.95rem, 2.2vw, 1.4rem);
+      line-height: 1.3;
+      opacity: 0;
+    }
+
+    .hud-box {
+      background: rgba(0, 0, 0, 0.65);
+      border: 2px solid #88ff44;
+      padding: 4px 10px;
+      min-width: 120px;
+    }
+
+    .hud-box .hud-label {
+      color: #88ff44;
+      font-size: 0.75em;
+      letter-spacing: 0.12em;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    .hud-box .hud-val {
+      color: #fff;
+      font-size: 1.2em;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .hud-bomb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bomb-icon {
+      width: 10px;
+      height: 10px;
+      background: #ffcc00;
+      border-radius: 50%;
+      box-shadow: 0 0 4px #ff8800;
+      display: inline-block;
+    }
+
+    /* Score center */
+    #hud-center {
+      text-align: center;
+    }
+
+    #hud-center .hud-pts {
+      color: #ffee00;
+      font-size: 1.4em;
+      text-shadow: 2px 2px 0 #000, 0 0 8px rgba(255, 220, 0, 0.5);
+    }
+
+    /* ── Lyric display ── */
+    #lyric-wrap {
+      position: fixed;
+      bottom: clamp(80px, 13vh, 150px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      width: min(820px, 90vw);
+      text-align: center;
+    }
+
+    #lyric {
+      display: inline-block;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 5rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: #ffee00;
+      text-shadow:
+        3px 3px 0 #000,
+        -2px -2px 0 #000,
+        0 0 20px rgba(255, 200, 0, 0.6);
+      background: rgba(0, 0, 0, 0.55);
+      padding: clamp(8px, 1.5vw, 20px) clamp(12px, 3vw, 40px);
+      border: 3px solid rgba(255, 200, 0, 0.4);
+      opacity: 0;
+      position: relative;
+    }
+
+    #lyric::before,
+    #lyric::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-color: #ffee00;
+      border-style: solid;
+      opacity: 0.6;
+    }
+
+    #lyric::before {
+      top: -3px;
+      left: -3px;
+      border-width: 3px 0 0 3px;
+    }
+
+    #lyric::after {
+      bottom: -3px;
+      right: -3px;
+      border-width: 0 3px 3px 0;
+    }
+
+    /* ── Indicador de nivel (bottom bar) ── */
+    #level-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      height: 14px;
+      background: rgba(0, 0, 0, 0.7);
+      border-top: 2px solid #445533;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaccaa;
+      font-family: 'VT323', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+    }
+
+    /* ── Title screen ── */
+    #title-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    #ts-title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2rem, 6vw, 5rem);
+      color: #ffee00;
+      text-shadow: 4px 4px 0 #cc0000;
+      text-align: center;
+      padding: 0 20px;
+      animation: scanline 0.08s step-end infinite alternate;
+    }
+
+    @keyframes scanline {
+      0% {
+        opacity: 1
+      }
+
+      100% {
+        opacity: 0.9
+      }
+    }
+
+    #ts-sub {
+      font-family: 'VT323', monospace;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      color: #ff4400;
+      letter-spacing: 0.15em;
+    }
+
+    #ts-press {
+      font-family: 'VT323', monospace;
+      font-size: clamp(1rem, 2vw, 1.5rem);
+      color: #aaa;
+      animation: blink2 1s step-end infinite;
+    }
+
+    @keyframes blink2 {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0
+      }
+    }
+
+    /* ── Smoke ── */
+    .smoke {
+      position: fixed;
+      z-index: 6;
+      pointer-events: none;
+      border-radius: 50%;
+      background: rgba(80, 80, 60, 0.3);
+      opacity: 0;
+    }
+
+    /* ── Follaje foreground ── */
+    .fg-leaf {
+      position: fixed;
+      z-index: 7;
+      bottom: 54px;
+      background: #1e6010;
+      border-radius: 0 60% 0 60%;
+      transform-origin: bottom center;
+      animation: sway 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes sway {
+      0% {
+        transform: rotate(-4deg)
+      }
+
+      100% {
+        transform: rotate(4deg)
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<div id="sky"></div>
+  <div id="sky"></div>
 
-<!-- mountains -->
-<div class="mountain" style="width:200px;height:140px;right:20%;clip-path:polygon(0 100%,50% 0,100% 100%)"></div>
-<div class="mountain" style="width:140px;height:100px;right:8%;clip-path:polygon(0 100%,50% 0,100% 100%)"></div>
-<div class="mountain" style="width:260px;height:160px;left:0%;clip-path:polygon(0 100%,50% 0,100% 100%)"></div>
+  <!-- Nubes -->
+  <div class="cloud" style="width:90px;height:24px;top:8%;left:10%;"></div>
+  <div class="cloud" style="width:120px;height:28px;top:14%;left:38%;"></div>
+  <div class="cloud" style="width:70px;height:18px;top:6%;right:18%;"></div>
 
-<!-- Ruins -->
-<div class="ruin" style="width:20px;height:80px;left:42%;"></div>
-<div class="ruin" style="width:20px;height:55px;left:44%;"></div>
-<div class="ruin" style="width:20px;height:95px;right:30%;"></div>
+  <!-- Fondo de selva -->
+  <div id="jungle-bg"></div>
 
-<!-- Ground layers -->
-<div id="ground-far"></div>
-<div id="ground-mid"></div>
-<div id="ground"></div>
-
-<!-- Helicopter -->
-<div id="heli">
-  <div class="heli-body">
-    <div class="heli-rotor"></div>
-    <div class="heli-tail"></div>
-    <div class="heli-gun"></div>
+  <!-- Árboles grandes con raíces (estilo MS) -->
+  <!-- Árbol izquierdo -->
+  <div class="tree" style="left:2%">
+    <div style="position:relative;width:22px;height:120px;" class="tree-trunk">
+      <div class="tree-root-l"></div>
+      <div class="tree-root-r"></div>
+      <div class="tree-canopy" style="width:70px;height:60px;top:-55px;border-radius:4px 4px 0 0;">
+        <div
+          style="position:absolute;bottom:0;left:0;right:0;height:20px;background:#1a5a0a;border-top:2px solid #2a6a14;">
+        </div>
+      </div>
+      <div class="tree-canopy"
+        style="width:50px;height:40px;top:-85px;border-radius:4px 4px 0 0;left:50%;transform:translateX(-50%)"></div>
+    </div>
   </div>
-</div>
 
-<!-- Tank -->
-<div id="tank">
-  <div class="tank-body">
-    <div class="tank-barrel"></div>
-    <div class="muzzle-flash" id="mflash"></div>
+  <!-- Árbol derecho -->
+  <div class="tree" style="right:4%">
+    <div style="position:relative;width:18px;height:100px;" class="tree-trunk">
+      <div class="tree-root-l"></div>
+      <div class="tree-root-r"></div>
+      <div class="tree-canopy" style="width:60px;height:50px;top:-46px;border-radius:4px 4px 0 0;">
+        <div
+          style="position:absolute;bottom:0;left:0;right:0;height:16px;background:#1a5a0a;border-top:2px solid #2a6a14;">
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="tank-track"></div>
-</div>
 
-<!-- HUD -->
-<div id="hud">
-  <div>MISSION 01</div>
-  <div id="hud-pts">PTS: <span id="pts">000000</span></div>
-  <div id="hud-song" style="font-size:0.85em;color:rgba(255,200,0,0.7)">♪ {{SONG_NAME}}</div>
-</div>
+  <!-- Árbol fondo derecho -->
+  <div class="tree" style="right:22%;bottom:80px;z-index:2;opacity:0.7">
+    <div style="position:relative;width:14px;height:80px;" class="tree-trunk">
+      <div class="tree-canopy" style="width:50px;height:42px;top:-38px;border-radius:4px 4px 0 0;"></div>
+    </div>
+  </div>
 
-<!-- Lyric -->
-<div id="lyric-wrap"><div id="lyric"></div></div>
+  <!-- Follaje foreground -->
+  <div class="fg-leaf" style="width:60px;height:30px;left:14%;animation-delay:0s;transform:rotate(-20deg)"></div>
+  <div class="fg-leaf" style="width:80px;height:36px;left:18%;animation-delay:0.4s;transform:rotate(10deg)"></div>
+  <div class="fg-leaf" style="width:50px;height:24px;right:10%;animation-delay:1s;transform:rotate(15deg)"></div>
+  <div class="fg-leaf" style="width:70px;height:32px;right:6%;animation-delay:0.7s;transform:rotate(-8deg)"></div>
 
-<!-- Title -->
-<div id="title-screen">
-  <div id="ts-title">{{SONG_NAME}}</div>
-  <div id="ts-sub">{{ARTIST_NAME}}</div>
-  <div id="ts-press">INSERT COIN ▶ PRESS START</div>
-</div>
+  <!-- Ruina con cara tallada (columna grande central) -->
+  <div class="ruin-face" style="width:52px;height:130px;left:44%;border-radius:2px 2px 0 0;"></div>
 
-<script>
-const LYRICS = [{{LYRICS_JSON}}];
-let idx = 0;
-let pts = 0;
+  <!-- Columnas menores -->
+  <div class="ruin-col" style="width:18px;height:75px;left:36%;"></div>
+  <div class="ruin-col" style="width:18px;height:55px;left:38%;"></div>
+  <div class="ruin-col" style="width:18px;height:90px;right:28%;"></div>
+  <div class="ruin-col" style="width:18px;height:60px;right:25%;"></div>
 
-const lyricEl = document.getElementById('lyric');
-const ptsEl   = document.getElementById('pts');
-const mflash  = document.getElementById('mflash');
-const heliEl  = document.getElementById('heli');
-const tankEl  = document.getElementById('tank');
-const hud     = document.getElementById('hud');
-const titleSc = document.getElementById('title-screen');
+  <!-- Plataforma (terreno medio elevado) -->
+  <div class="platform" style="left:25%;width:180px;height:18px;bottom:88px;"></div>
 
-// Animate heli flying across
-function flyHeli(){
-  gsap.fromTo(heliEl, {left:'-180px'}, {left:'110%', duration:14, ease:'none', repeat:-1, repeatDelay:6});
-}
-flyHeli();
+  <!-- Ground layers -->
+  <div id="ground-far"></div>
+  <div id="ground-mid"></div>
+  <div id="ground"></div>
 
-// Tank slow roll
-gsap.to('#tank', {left:'35%', duration:30, ease:'none', repeat:-1, repeatDelay:2});
+  <!-- Helicopter -->
+  <div id="heli">
+    <div class="heli-body">
+      <div class="heli-rotor"></div>
+      <div class="heli-tail"></div>
+      <div class="heli-gun"></div>
+    </div>
+  </div>
 
-// Cannon fire on each line
-function fireCannon(){
-  gsap.fromTo(mflash, {opacity:1,scaleX:1},{opacity:0,scaleX:2,duration:0.15,ease:'power3.out'});
-  spawnExplosion(window.innerWidth*0.25, window.innerHeight*0.6);
-}
+  <!-- Tank -->
+  <div id="tank">
+    <div class="tank-body">
+      <div class="tank-barrel"></div>
+      <div class="muzzle-flash" id="mflash"></div>
+    </div>
+    <div class="tank-track"></div>
+  </div>
 
-// Explosion
-function spawnExplosion(x, y){
-  const div = document.createElement('div');
-  div.className='explosion';
-  div.style.left = x+'px';
-  div.style.top  = y+'px';
-  document.body.appendChild(div);
-  for(let i=0;i<3;i++){
-    const ring=document.createElement('div');
-    ring.className='exp-ring';
-    const size=(i+1)*50 + Math.random()*30;
-    ring.style.width=size+'px';ring.style.height=size+'px';
-    div.appendChild(ring);
-    gsap.fromTo(ring,
-      {opacity:1,scale:0},
-      {opacity:0,scale:1.5,duration:0.4+i*0.1,delay:i*0.05,ease:'power2.out',
-       onComplete:i===2?()=>div.remove():null}
-    );
-  }
-  // smoke puffs
-  for(let i=0;i<4;i++){
-    const s=document.createElement('div');s.className='smoke';
-    const sz=20+Math.random()*30;
-    s.style.cssText=`width:${sz}px;height:${sz}px;left:${x+(Math.random()-0.5)*60}px;top:${y+(Math.random()-0.5)*40}px`;
-    document.body.appendChild(s);
-    gsap.fromTo(s,{opacity:0.6,scale:0.5,y:0},{opacity:0,scale:2,y:-60,duration:0.8+Math.random()*0.4,delay:Math.random()*0.2,onComplete:()=>s.remove()});
-  }
-}
+  <!-- HUD estilo Metal Slug -->
+  <div id="hud">
+    <!-- 1UP -->
+    <div class="hud-box">
+      <div class="hud-label">1UP</div>
+      <div class="hud-val" id="pts">000000</div>
+      <div class="hud-bomb">
+        <span class="hud-label">ARM'S</span>&nbsp;
+        <span class="bomb-icon"></span><span class="bomb-icon"></span><span class="bomb-icon"></span>
+        <span class="hud-val" style="font-size:0.9em">×10</span>
+      </div>
+    </div>
+    <!-- CENTER: song name -->
+    <div id="hud-center" class="hud-box" style="min-width:160px">
+      <div class="hud-label">♪ MISSION 01</div>
+      <div id="hud-song" class="hud-label" style="font-size:0.8em;color:rgba(150,255,100,0.8)">{{SONG_NAME}}</div>
+    </div>
+    <!-- 2UP -->
+    <div class="hud-box">
+      <div class="hud-label">2UP</div>
+      <div class="hud-val">000000</div>
+      <div class="hud-bomb">
+        <span class="hud-label">ARM'S</span>&nbsp;
+        <span class="bomb-icon"></span><span class="bomb-icon"></span>
+        <span class="hud-val" style="font-size:0.9em">×10</span>
+      </div>
+    </div>
+  </div>
 
-function showLine(text, onDone){
-  if(!text||!text.trim()){setTimeout(onDone,600);return;}
-  pts += 200;
-  ptsEl.textContent = String(pts).padStart(6,'0');
-  lyricEl.textContent = text;
-  fireCannon();
-  const hold = Math.max(1200, text.length * 60);
-  gsap.timeline()
-    .fromTo(lyricEl,
-      {opacity:0, y:20, scaleX:1.2, filter:'blur(4px)'},
-      {opacity:1, y:0,  scaleX:1,   filter:'blur(0px)', duration:0.18, ease:'power3.out'}
-    )
-    .to(lyricEl,
-      {opacity:0, y:-15, scaleX:0.9, duration:0.18, ease:'power3.in', delay:hold/1000},
-      '+= 0'
-    )
-    .call(onDone);
-}
+  <!-- Lyric -->
+  <div id="lyric-wrap">
+    <div id="lyric"></div>
+  </div>
 
-function next(){
-  if(idx>=LYRICS.length) return;
-  showLine(LYRICS[idx++], next);
-}
+  <!-- Barra de nivel inferior -->
+  <div id="level-bar">LEVEL-4 &nbsp;&nbsp;&nbsp; CREDIT 00</div>
 
-// Title screen out
-gsap.to(titleSc, {opacity:0, duration:0.5, delay:3,
-  onComplete:()=>{
-    titleSc.style.display='none';
-    gsap.fromTo(hud,{opacity:0},{opacity:1,duration:0.4});
-    spawnExplosion(window.innerWidth*0.5, window.innerHeight*0.5);
-    setTimeout(next, 600);
-  }
-});
-</script>
+  <!-- Title -->
+  <div id="title-screen">
+    <div id="ts-title">{{SONG_NAME}}</div>
+    <div id="ts-sub">{{ARTIST_NAME}}</div>
+    <div id="ts-press">INSERT COIN ▶ PRESS START</div>
+  </div>
+
+  <script>
+    const LYRICS = [{{LYRICS_JSON}}];
+    let idx = 0;
+    let pts = 0;
+
+    const lyricEl = document.getElementById('lyric');
+    const ptsEl = document.getElementById('pts');
+    const mflash = document.getElementById('mflash');
+    const heliEl = document.getElementById('heli');
+    const tankEl = document.getElementById('tank');
+    const hud = document.getElementById('hud');
+    const titleSc = document.getElementById('title-screen');
+
+    function flyHeli() {
+      gsap.fromTo(heliEl, { left: '-180px' }, { left: '110%', duration: 14, ease: 'none', repeat: -1, repeatDelay: 6 });
+    }
+    flyHeli();
+
+    gsap.to('#tank', { left: '35%', duration: 30, ease: 'none', repeat: -1, repeatDelay: 2 });
+
+    function fireCannon() {
+      gsap.fromTo(mflash, { opacity: 1, scaleX: 1 }, { opacity: 0, scaleX: 2, duration: 0.15, ease: 'power3.out' });
+      spawnExplosion(window.innerWidth * 0.25, window.innerHeight * 0.6);
+    }
+
+    function spawnExplosion(x, y) {
+      const div = document.createElement('div');
+      div.className = 'explosion';
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      document.body.appendChild(div);
+      for (let i = 0; i < 3; i++) {
+        const ring = document.createElement('div');
+        ring.className = 'exp-ring';
+        const size = (i + 1) * 50 + Math.random() * 30;
+        ring.style.width = size + 'px'; ring.style.height = size + 'px';
+        div.appendChild(ring);
+        gsap.fromTo(ring,
+          { opacity: 1, scale: 0 },
+          {
+            opacity: 0, scale: 1.5, duration: 0.4 + i * 0.1, delay: i * 0.05, ease: 'power2.out',
+            onComplete: i === 2 ? () => div.remove() : null
+          }
+        );
+      }
+      for (let i = 0; i < 4; i++) {
+        const s = document.createElement('div'); s.className = 'smoke';
+        const sz = 20 + Math.random() * 30;
+        s.style.cssText = `width:${sz}px;height:${sz}px;left:${x + (Math.random() - 0.5) * 60}px;top:${y + (Math.random() - 0.5) * 40}px`;
+        document.body.appendChild(s);
+        gsap.fromTo(s, { opacity: 0.6, scale: 0.5, y: 0 }, { opacity: 0, scale: 2, y: -60, duration: 0.8 + Math.random() * 0.4, delay: Math.random() * 0.2, onComplete: () => s.remove() });
+      }
+    }
+
+    function showLine(text, onDone) {
+      if (!text || !text.trim()) { setTimeout(onDone, 600); return; }
+      pts += 200;
+      ptsEl.textContent = String(pts).padStart(6, '0');
+      lyricEl.textContent = text;
+      fireCannon();
+      const hold = Math.max(1200, text.length * 60);
+      gsap.timeline()
+        .fromTo(lyricEl,
+          { opacity: 0, y: 20, scaleX: 1.2, filter: 'blur(4px)' },
+          { opacity: 1, y: 0, scaleX: 1, filter: 'blur(0px)', duration: 0.18, ease: 'power3.out' }
+        )
+        .to(lyricEl,
+          { opacity: 0, y: -15, scaleX: 0.9, duration: 0.18, ease: 'power3.in', delay: hold / 1000 },
+          '+= 0'
+        )
+        .call(onDone);
+    }
+
+    function next() {
+      if (idx >= LYRICS.length) return;
+      showLine(LYRICS[idx++], next);
+    }
+
+    gsap.to(titleSc, {
+      opacity: 0, duration: 0.5, delay: 3,
+      onComplete: () => {
+        titleSc.style.display = 'none';
+        gsap.fromTo(hud, { opacity: 0 }, { opacity: 1, duration: 0.4 });
+        spawnExplosion(window.innerWidth * 0.5, window.innerHeight * 0.5);
+        setTimeout(next, 600);
+      }
+    });
+  </script>
 </body>
+
 </html>

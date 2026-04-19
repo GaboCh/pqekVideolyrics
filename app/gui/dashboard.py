@@ -46,6 +46,12 @@ class Dashboard:
                                     label="Modo de Generación",
                                     elem_id="mode-radio"
                                 )
+                                preview_format = gr.Radio(
+                                    choices=["Horizontal (16:9)", "Vertical TikTok (9:16)"],
+                                    value="Horizontal (16:9)",
+                                    label="Formato (Preview)",
+                                    elem_id="format-radio"
+                                )
 
                             template_choice = gr.Dropdown(
                                 choices=[
@@ -57,6 +63,8 @@ class Dashboard:
                                     "Metal Slug (Arcade)",
                                     "Snow Globe (CSS)",
                                     "🎵 Mix (Multi-estilo)",
+                                    "📸 Karaoke + Foto (Landscape)",
+                                    "📸 Karaoke + Foto (Portrait)",
                                 ],
                                 label="🎨 Template Visual",
                                 value="Space / Cosmos",
@@ -92,6 +100,14 @@ class Dashboard:
                                 visible=False
                             )
 
+                            # Photo upload specifically for Karaoke templates
+                            cover_image_upload = gr.Image(
+                                label="🖼️ Subir Foto de Portada (Para templates Karaoke)",
+                                type="filepath",
+                                visible=False,
+                                elem_id="cover-upload"
+                            )
+
                             gen_btn = gr.Button("✨ Generar", variant="primary", elem_id="gen-btn")
                             status_text = gr.Markdown("Listo para generar...")
 
@@ -101,16 +117,24 @@ class Dashboard:
                                 raw_html_output = gr.Code(language="html", label="Código Fuente", interactive=False)
 
                     # Toggle visibility on mode change
-                    def on_mode_change(mode):
+                    def on_mode_change(mode, template):
                         is_template = "Template" in mode
+                        is_photo_template = is_template and "Karaoke + Foto" in template
                         return (
-                            gr.update(visible=is_template),
-                            gr.update(visible=not is_template),
-                            gr.update(visible=not is_template)
+                            gr.update(visible=is_template),            # Template dropdown
+                            gr.update(visible=not is_template),        # AI style dropdown
+                            gr.update(visible=not is_template),        # Groq model
+                            gr.update(visible=is_photo_template)       # Photo upload
                         )
-                    use_template.change(fn=on_mode_change, inputs=[use_template], outputs=[template_choice, ai_style, model_choice])
 
-                    def generate(lyr, sng, art, mode, tmpl, sty, mod):
+                    def on_template_change(mode, template):
+                        is_photo_template = ("Template" in mode) and ("Karaoke + Foto" in template)
+                        return gr.update(visible=is_photo_template)
+
+                    use_template.change(fn=on_mode_change, inputs=[use_template, template_choice], outputs=[template_choice, ai_style, model_choice, cover_image_upload])
+                    template_choice.change(fn=on_template_change, inputs=[use_template, template_choice], outputs=[cover_image_upload])
+
+                    def generate(lyr, sng, art, mode, tmpl, sty, mod, cover_img_path, format_ratio):
                         import base64
                         self.llm.model = mod
 
@@ -122,10 +146,14 @@ class Dashboard:
                                 "Grunge Brush (CSS)":       "Grunge Brush (CSS)",
                                 "Zoom Punch (CSS)":         "Zoom Punch (CSS)",
                                 "Pixel Retro — Mario (CSS)":"Pixel Retro (Mario)",
+                                "Metal Slug (Arcade)":      "Metal Slug (Arcade)",
+                                "Snow Globe (CSS)":         "Snow Globe (CSS)",
                                 "🎵 Mix (Multi-estilo)":    "🎵 Mix (Multi-estilo)",
+                                "📸 Karaoke + Foto (Landscape)": "📸 Karaoke + Foto (Landscape)",
+                                "📸 Karaoke + Foto (Portrait)": "📸 Karaoke + Foto (Portrait)",
                             }
                             style_key = template_map.get(tmpl, tmpl)
-                            html_code = PromptBuilder.get_template_html(lyr, sng, art, style_key)
+                            html_code = PromptBuilder.get_template_html(lyr, sng, art, style_key, cover_image_path=cover_img_path)
                             source = f"⚡ Template: {tmpl}"
                             if not html_code:
                                 return "<div style='color:orange;padding:20px'>Template no encontrado. Intenta con Groq.</div>", "❌ Template no encontrado", ""
@@ -135,13 +163,22 @@ class Dashboard:
                             html_code = self.llm.generate_html(prompt)
 
                         self.current_html = html_code
-                        b64_html = base64.b64encode(html_code.encode('utf-8')).decode('utf-8')
-                        iframe = f'<iframe src="data:text/html;base64,{b64_html}" style="width:100%;height:500px;border:none;border-radius:10px;"></iframe>'
+                        
+                        import html
+                        escaped_html = html.escape(html_code)
+                        
+                        iframe_style = "width:100%;height:500px;border:none;border-radius:10px;"
+                        if format_ratio == "Vertical TikTok (9:16)":
+                            # Centramos el iframe y le damos proporción de celular (aprox 360x640)
+                            iframe_style = "width:360px;height:640px;border:2px solid #333;border-radius:16px;box-shadow: 0 10px 30px rgba(0,0,0,0.5);margin: 0 auto;display:block;"
+
+                        iframe = f'<iframe srcdoc="{escaped_html}" style="{iframe_style}"></iframe>'
+
                         return iframe, f"HTML generado ✓ ({source})", html_code
 
                     gen_btn.click(
                         fn=generate,
-                        inputs=[lyrics, song, artist, use_template, template_choice, ai_style, model_choice],
+                        inputs=[lyrics, song, artist, use_template, template_choice, ai_style, model_choice, cover_image_upload, preview_format],
                         outputs=[html_preview, status_text, raw_html_output]
                     )
 
@@ -182,11 +219,17 @@ class Dashboard:
                 with gr.Tab("3. Exportar MP4"):
                     with gr.Row():
                         with gr.Column():
-                            res = gr.Radio(["1920x1080", "1280x720", "1080x1920"], label="Resolución", value="1920x1080")
-                            fps = gr.Slider(24, 60, step=6, label="FPS", value=30)
-                            dur = gr.Slider(5, 60, step=5, label="Duración (segundos)", value=15)
+                            gr.Markdown(
+                                "### 🎥 Opciones de Renderizado\n"
+                                "💡 **Para TikTok / Reels:** Elige Resolución **1080x1920** para que el video mantenga el formato vertical del celular.\n"
+                                "💡 **Para YouTube:** Elige **1920x1080**."
+                            )
+                            res = gr.Radio(["1920x1080", "1280x720", "1080x1920"], label="Resolución de Salida", value="1920x1080")
+                            fps = gr.Slider(24, 60, step=6, label="FPS (Suavidad)", value=30)
+                            dur = gr.Slider(5, 60, step=5, label="Duración máxima a grabar (segundos)", value=15)
                             
                             export_btn = gr.Button("🎥 Grabar y Exportar MP4", variant="primary")
+
                             
                         with gr.Column():
                             output_video = gr.Video(label="Video Final")
