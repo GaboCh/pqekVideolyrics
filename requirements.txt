@@ -1,10 +1,16 @@
-# requirements.txt
+# requirements.txt — pqekVideolyrics
+
+# Interfaz
 gradio
+
+# LLM - Groq
+groq
+
+# Renderizado headless
+playwright
+
+# Variables de entorno
 python-dotenv
-pandas
-numpy
-binance-connector
-python-binance
+
+# Utilidades
 requests
-plotly
-pandas-ta
