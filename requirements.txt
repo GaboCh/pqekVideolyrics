@@ -1,16 +1,21 @@
-# requirements.txt — pqekVideolyrics
-
-# Interfaz
+# requirements.txt
 gradio
-
-# LLM - Groq
-groq
-
-# Renderizado headless
-playwright
-
-# Variables de entorno
-python-dotenv
-
-# Utilidades
 requests
+python-dotenv
+moviepy
+# pysrt                  # no aplica: es para subtitulos .srt, este proyecto no los usa
+# instaloader            # no aplica: es para descargar contenido de Instagram
+# yt-dlp>=2026.01.01     # no aplica: es para descargar videos de YouTube/TikTok
+# tiktok-uploader        # no aplica: es para subir videos a TikTok
+imageio
+imageio-ffmpeg
+numpy
+pillow
+# --- YouTube API (no aplica para este proyecto) ---
+# google-api-python-client
+# google-auth-oauthlib
+# google-auth-httplib2
+
+# --- Especifico de este proyecto ---
+groq
+playwright
