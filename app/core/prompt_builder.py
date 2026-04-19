@@ -35,23 +35,35 @@ class PromptBuilder:
         song_name: str,
         artist_name: str,
         lyrics: str,
-        cover_image_path: str | None = None
+        cover_image_path: str | None = None,
+        audio_path: str | None = None
     ) -> str | None:
         """
         Fill a pre-made HTML template with song data.
-        Optionally embed a cover image as base64.
+        Optionally embed a cover image and audio as base64.
         """
         try:
             with open(template_path, "r", encoding="utf-8") as f:
                 html = f.read()
 
-            lines = lyrics.split("\n")
-            lyrics_array_content = ", ".join(json.dumps(l, ensure_ascii=False) for l in lines)
+            # Detectar si lyrics ya es un JSON (array de SRT)
+            import json
+            stripped_lyrics = lyrics.strip()
+            
+            # Ajuste de Lógica: El HTML tiene `const LYRICS = [{{LYRICS_JSON}}];`
+            if stripped_lyrics.startswith("[") and stripped_lyrics.endswith("]"):
+                lyrics_array_content = stripped_lyrics[1:-1]
+                parsed = json.loads(stripped_lyrics)
+                first_line = parsed[0].get("text", "") if parsed and isinstance(parsed[0], dict) else ""
+            else:
+                lines = lyrics.split("\n")
+                lyrics_array_content = ", ".join(json.dumps(l, ensure_ascii=False) for l in lines)
+                first_line = lines[0] if lines else ""
 
             html = html.replace("{{SONG_NAME}}", song_name or "Lyric Video")
             html = html.replace("{{ARTIST_NAME}}", artist_name or "")
             html = html.replace("{{LYRICS_JSON}}", lyrics_array_content)
-            html = html.replace("{{FIRST_LINE}}", lines[0] if lines else "")
+            html = html.replace("{{FIRST_LINE}}", first_line)
 
             # Embed cover image as base64 data URL
             if cover_image_path and os.path.isfile(cover_image_path):
@@ -63,8 +75,19 @@ class PromptBuilder:
                 data_url = f"data:{mime};base64,{b64}"
                 html = html.replace("{{COVER_IMAGE}}", data_url)
             else:
-                # Placeholder grey gradient if no image provided
                 html = html.replace("{{COVER_IMAGE}}", "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23222'/%3E%3Ctext x='200' y='210' text-anchor='middle' fill='%23555' font-size='20' font-family='sans-serif'%3ESubir foto%3C/text%3E%3C/svg%3E")
+
+            # Embed audio as base64 data URL for live preview
+            if audio_path and os.path.isfile(audio_path):
+                import base64, mimetypes
+                mime, _ = mimetypes.guess_type(audio_path)
+                mime = mime or "audio/mpeg"
+                with open(audio_path, "rb") as audio_f:
+                    audio_b64 = base64.b64encode(audio_f.read()).decode("utf-8")
+                audio_url = f"data:{mime};base64,{audio_b64}"
+                html = html.replace("{{AUDIO_DATA}}", audio_url)
+            else:
+                html = html.replace("{{AUDIO_DATA}}", "")
 
             return html
         except Exception as e:
@@ -76,7 +99,8 @@ class PromptBuilder:
         song_name: str,
         artist_name: str,
         style_name: str,
-        cover_image_path: str | None = None
+        cover_image_path: str | None = None,
+        audio_path: str | None = None
     ) -> str | None:
         """
         Try to find and fill a template for the given style.
@@ -86,7 +110,7 @@ class PromptBuilder:
         if style_name == "🎵 Mix (Multi-estilo)":
             tagged_lyrics = PromptBuilder._tag_lyrics_for_mix(lyrics)
             template_path = os.path.join(TEMPLATES_DIR, "mix_template.html")
-            return PromptBuilder.fill_template(template_path, song_name, artist_name, tagged_lyrics)
+            return PromptBuilder.fill_template(template_path, song_name, artist_name, tagged_lyrics, audio_path=audio_path)
 
         template_file = STYLE_TO_TEMPLATE.get(style_name)
         if not template_file:
@@ -94,7 +118,8 @@ class PromptBuilder:
         template_path = os.path.join(TEMPLATES_DIR, template_file)
         return PromptBuilder.fill_template(
             template_path, song_name, artist_name, lyrics,
-            cover_image_path=cover_image_path
+            cover_image_path=cover_image_path,
+            audio_path=audio_path
         )
 
     @staticmethod

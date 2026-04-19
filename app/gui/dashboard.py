@@ -34,7 +34,10 @@ class Dashboard:
                 with gr.Tab("1. Generar Lyric Video"):
                     with gr.Row():
                         with gr.Column(scale=1):
-                            lyrics = gr.TextArea(label="Letra de la canción", placeholder="Pega aquí la letra...", lines=10)
+                            with gr.Accordion("📄 Letra (Texto o SRT)", open=True):
+                                srt_upload = gr.File(label="Subir Archivo .srt (Sincronización Perfecta)", file_types=[".srt"])
+                                lyrics = gr.TextArea(label="O pega aquí la letra (texto plano)", placeholder="Pega aquí la letra...\n(Si subes un SRT, esto se ignorará)", lines=5)
+                            
                             with gr.Row():
                                 song = gr.Textbox(label="Canción", placeholder="ej. Blinding Lights")
                                 artist = gr.Textbox(label="Artista", placeholder="ej. The Weeknd")
@@ -100,19 +103,24 @@ class Dashboard:
                                 visible=False
                             )
 
-                            # Photo upload specifically for Karaoke templates
-                            cover_image_upload = gr.Image(
-                                label="🖼️ Subir Foto de Portada (Para templates Karaoke)",
-                                type="filepath",
-                                visible=False,
-                                elem_id="cover-upload"
-                            )
+                            # Photo and Audio uploads
+                            with gr.Row():
+                                cover_image_upload = gr.Image(
+                                    label="🖼️ Subir Portada",
+                                    type="filepath",
+                                    visible=False,
+                                    elem_id="cover-upload"
+                                )
+                                audio_upload = gr.Audio(
+                                    label="🎵 Subir Audio (MP3, WAV, etc.)",
+                                    type="filepath"
+                                )
 
                             gen_btn = gr.Button("✨ Generar", variant="primary", elem_id="gen-btn")
                             status_text = gr.Markdown("Listo para generar...")
 
                         with gr.Column(scale=1):
-                            html_preview = gr.HTML(label="Preview", value="<div style='height:400px; display:flex; align-items:center; justify-content:center; background:#1a1a1e; border-radius:10px; color:#555;'>El preview aparecerá aquí</div>")
+                            html_preview = gr.HTML(label="Preview con Audio", value="<div style='height:400px; display:flex; align-items:center; justify-content:center; background:#1a1a1e; border-radius:10px; color:#555;'>El preview aparecerá aquí.</div>")
                             with gr.Accordion("Ver Código HTML (Depuración)", open=False):
                                 raw_html_output = gr.Code(language="html", label="Código Fuente", interactive=False)
 
@@ -134,9 +142,18 @@ class Dashboard:
                     use_template.change(fn=on_mode_change, inputs=[use_template, template_choice], outputs=[template_choice, ai_style, model_choice, cover_image_upload])
                     template_choice.change(fn=on_template_change, inputs=[use_template, template_choice], outputs=[cover_image_upload])
 
-                    def generate(lyr, sng, art, mode, tmpl, sty, mod, cover_img_path, format_ratio):
+                    def generate(srt_file, lyr, sng, art, mode, tmpl, sty, mod, cover_img_path, format_ratio, audio_path):
                         import base64
+                        import json
+                        from app.utils.srt_parser import parse_srt
+                        
                         self.llm.model = mod
+
+                        # Usar SRT si está disponible
+                        final_lyrics = lyr
+                        if srt_file:
+                            srt_data = parse_srt(srt_file.name)
+                            final_lyrics = json.dumps(srt_data, ensure_ascii=False)
 
                         if "Template" in mode:
                             # Map display name to key
@@ -153,13 +170,13 @@ class Dashboard:
                                 "📸 Karaoke + Foto (Portrait)": "📸 Karaoke + Foto (Portrait)",
                             }
                             style_key = template_map.get(tmpl, tmpl)
-                            html_code = PromptBuilder.get_template_html(lyr, sng, art, style_key, cover_image_path=cover_img_path)
+                            html_code = PromptBuilder.get_template_html(final_lyrics, sng, art, style_key, cover_image_path=cover_img_path, audio_path=audio_path)
                             source = f"⚡ Template: {tmpl}"
                             if not html_code:
                                 return "<div style='color:orange;padding:20px'>Template no encontrado. Intenta con Groq.</div>", "❌ Template no encontrado", ""
                         else:
                             source = f"🤖 Groq ({mod})"
-                            prompt = PromptBuilder.build_generation_prompt(lyr, sng, art, sty)
+                            prompt = PromptBuilder.build_generation_prompt(final_lyrics, sng, art, sty)
                             html_code = self.llm.generate_html(prompt)
 
                         self.current_html = html_code
@@ -172,13 +189,13 @@ class Dashboard:
                             # Centramos el iframe y le damos proporción de celular (aprox 360x640)
                             iframe_style = "width:360px;height:640px;border:2px solid #333;border-radius:16px;box-shadow: 0 10px 30px rgba(0,0,0,0.5);margin: 0 auto;display:block;"
 
-                        iframe = f'<iframe srcdoc="{escaped_html}" style="{iframe_style}"></iframe>'
+                        iframe = f'<iframe srcdoc="{escaped_html}" style="{iframe_style}" allow="autoplay"></iframe>'
 
                         return iframe, f"HTML generado ✓ ({source})", html_code
 
                     gen_btn.click(
                         fn=generate,
-                        inputs=[lyrics, song, artist, use_template, template_choice, ai_style, model_choice, cover_image_upload, preview_format],
+                        inputs=[srt_upload, lyrics, song, artist, use_template, template_choice, ai_style, model_choice, cover_image_upload, preview_format, audio_upload],
                         outputs=[html_preview, status_text, raw_html_output]
                     )
 
@@ -219,37 +236,98 @@ class Dashboard:
                 with gr.Tab("3. Exportar MP4"):
                     with gr.Row():
                         with gr.Column():
-                            gr.Markdown(
-                                "### 🎥 Opciones de Renderizado\n"
-                                "💡 **Para TikTok / Reels:** Elige Resolución **1080x1920** para que el video mantenga el formato vertical del celular.\n"
-                                "💡 **Para YouTube:** Elige **1920x1080**."
+                            gr.Markdown("### ⚙️ Configuración de Exportación")
+                            
+                            platform = gr.Radio(
+                                ["📺 YouTube (Horizontal)", "📱 TikTok / Reels (Vertical)"], 
+                                label="Plataforma de destino", 
+                                value="📱 TikTok / Reels (Vertical)"
                             )
-                            res = gr.Radio(["1920x1080", "1280x720", "1080x1920"], label="Resolución de Salida", value="1920x1080")
-                            fps = gr.Slider(24, 60, step=6, label="FPS (Suavidad)", value=30)
-                            dur = gr.Slider(5, 60, step=5, label="Duración máxima a grabar (segundos)", value=15)
                             
-                            export_btn = gr.Button("🎥 Grabar y Exportar MP4", variant="primary")
+                            quality = gr.Radio(
+                                ["🚀 Borrador (Rápido)", "✅ Normal (HD)", "💎 Full HD (Lento)"], 
+                                label="Calidad de salida", 
+                                value="✅ Normal (HD)"
+                            )
 
+                            info_display = gr.Markdown("### ℹ️ Información de Archivos\n*Sube un audio o SRT para ver su duración.*")
                             
+                            export_btn = gr.Button("🎬 Grabar y Exportar MP4", variant="primary")
+
                         with gr.Column():
                             output_video = gr.Video(label="Video Final")
                     
-                    async def export(resolution, frames_ps, duration):
+                    def get_audio_duration(file_path):
+                        if not file_path: return None
+                        try:
+                            import subprocess
+                            cmd = [
+                                "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                                "-of", "default=noprint_wrappers=1:nokey=1", file_path
+                            ]
+                            result = subprocess.run(cmd, capture_output=True, text=True)
+                            dur_val = float(result.stdout.strip())
+                            return dur_val
+                        except:
+                            return None
+
+                    def update_info(srt_f, audio_f):
+                        from app.utils.srt_parser import get_srt_duration
+                        msg = "### ℹ️ Información de Archivos\n"
+                        final_dur = 30
+                        
+                        if srt_f:
+                            s_dur = get_srt_duration(srt_f.name)
+                            msg += f"✅ **SRT:** {int(s_dur//60)}:{int(s_dur%60):02d}s\n"
+                            final_dur = s_dur
+                        
+                        if audio_f:
+                            a_dur = get_audio_duration(audio_f)
+                            if a_dur:
+                                msg += f"🎵 **Audio:** {int(a_dur//60)}:{int(a_dur%60):02d}s\n"
+                                final_dur = a_dur
+                        
+                        if not srt_f and not audio_f:
+                            msg += "*No se han detectado archivos.*"
+                        else:
+                            msg += f"\n> [!TIP]\n> Se grabarán **{final_dur:.1f} segundos** automáticamente."
+                            
+                        return msg
+
+                    # Al subir archivos actualizamos la info. Nota: ya no movemos slider porque lo quitamos
+                    srt_upload.change(fn=update_info, inputs=[srt_upload, audio_upload], outputs=[info_display])
+                    audio_upload.change(fn=update_info, inputs=[srt_upload, audio_upload], outputs=[info_display])
+
+                    async def export_vid(plat, qual, audio_file):
                         if not self.current_html:
                             return None
                         
-                        w, h = map(int, resolution.split('x'))
+                        # Mapeo de presets
+                        is_vertical = "TikTok" in plat
                         
-                        # Renderizar frames
-                        frames_dir = await self.renderer.render_html(self.current_html, duration=duration, fps=frames_ps, width=w, height=h)
+                        # Resoluciones base
+                        if qual == "🚀 Borrador (Rápido)":
+                            w, h, fps = (640, 360, 24) if not is_vertical else (360, 640, 24)
+                        elif qual == "💎 Full HD (Lento)":
+                            w, h, fps = (1920, 1080, 30) if not is_vertical else (1080, 1920, 30)
+                        else: # Normal
+                            w, h, fps = (1280, 720, 30) if not is_vertical else (720, 1280, 30)
+
+                        audio_dur = get_audio_duration(audio_file)
+                        final_duration = audio_dur if audio_dur else 30
                         
-                        # Exportar a MP4
+                        logger.info(f"Exportando para {plat} en calidad {qual}. Total: {final_duration}s")
+
+                        # Renderizar
+                        frames_dir = await self.renderer.render_html(self.current_html, duration=final_duration, fps=fps, width=w, height=h)
+                        
+                        # Mezclar
                         output_path = "output_video.mp4"
-                        Exporter.frames_to_mp4(frames_dir, output_path, fps=frames_ps)
+                        Exporter.frames_to_mp4(frames_dir, output_path, fps=fps, audio_path=audio_file)
                         
                         return output_path
 
-                    export_btn.click(fn=export, inputs=[res, fps, dur], outputs=[output_video])
+                    export_btn.click(fn=export_vid, inputs=[platform, quality, audio_upload], outputs=[output_video])
 
         return demo
 

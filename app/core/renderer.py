@@ -30,21 +30,24 @@ class Renderer:
             # Esperar a que las librerías (GSAP/Three.js) carguen
             await page.wait_for_timeout(2000)
 
-            total_frames = duration * fps
-            logger.info(f"Iniciando captura de {total_frames} frames ({width}x{height} a {fps}fps)...")
+            # Congelar el tiempo y preparar para renderizado determinista
+            await page.evaluate("window.IS_RENDERING = true;")
+            
+            total_frames = int(duration * fps)
+            logger.info(f"Iniciando captura DETERMINISTA de {total_frames} frames ({width}x{height} a {fps}fps)...")
 
             for i in range(total_frames):
-                frame_path = os.path.join(self.output_dir, f"frame_{i:04d}.png")
-                await page.screenshot(path=frame_path)
+                # Calcular el tiempo exacto en ms para este frame
+                current_ms = (i * 1000) / fps
                 
-                # Avanzar el tiempo si el HTML soporta control de tiempo manual o simplemente esperar
-                # Como es una animación automática, capturamos en tiempo real con delays
-                # NOTA: Para renderizado perfecto se usaría un sistema de 'seek' en la animación (ticker.sleep)
-                # pero para este MVP capturaremos "live".
-                await asyncio.sleep(1.0 / fps)
+                # Mover el "reloj" del HTML al milisegundo exacto
+                await page.evaluate(f"window.seekTo({current_ms})")
+                
+                frame_path = os.path.join(self.output_dir, f"frame_{i:04d}.jpg")
+                await page.screenshot(path=frame_path, type="jpeg", quality=85)
                 
                 if i % 30 == 0:
-                    logger.info(f"Frame {i}/{total_frames} capturado...")
+                    logger.info(f"Frame {i}/{total_frames} capturado ({int(current_ms/1000)}s)...")
 
             await browser.close()
             

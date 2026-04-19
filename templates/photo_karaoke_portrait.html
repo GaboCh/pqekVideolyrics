@@ -245,6 +245,8 @@
 <div id="bg-blur"></div>
 <div id="bg-overlay"></div>
 
+<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto"></audio>
+
 <div id="app">
   <!-- Cover -->
   <div id="cover-wrap">
@@ -269,18 +271,23 @@
 </div>
 
 <script>
-const LYRICS = [{{LYRICS_JSON}}];
+const LYRICS_RAW = [{{LYRICS_JSON}}];
+const LYRICS = typeof LYRICS_RAW[0] === 'string' 
+  ? LYRICS_RAW.map(text => ({ text: text, startMs: null, endMs: null })) 
+  : LYRICS_RAW;
+
 const ACTIVE_IDX = 2;
 let currentIdx = 0;
+let startTime = 0;
 
 const scrollEl = document.getElementById('lyric-scroll');
 const lineEls  = [];
 
-LYRICS.forEach((text) => {
+LYRICS.forEach((lineObj) => {
   const el = document.createElement('div');
   el.className = 'lyric-line';
-  el.dataset.text = text;
-  el.textContent = text;
+  el.dataset.text = lineObj.text;
+  el.textContent = lineObj.text;
   scrollEl.appendChild(el);
   lineEls.push(el);
 });
@@ -321,15 +328,29 @@ function updateLines(){
   scrollEl.style.transform = `translateY(-${offset}px)`;
 }
 
-function getHoldMs(text){
-  if(!text||!text.trim()) return 600;
-  return Math.max(1400, text.length * 65);
+function getHoldMs(lineObj){
+  if(lineObj.startMs === null || lineObj.endMs === null) {
+    if(!lineObj.text || !lineObj.text.trim()) return 600;
+    return Math.max(1400, lineObj.text.length * 65);
+  }
+  return Math.max(0, lineObj.endMs - lineObj.startMs);
 }
 
 function advance(){
   if(currentIdx >= LYRICS.length) return;
   updateLines();
-  setTimeout(() => { currentIdx++; advance(); }, getHoldMs(LYRICS[currentIdx]));
+  
+  const currentLine = LYRICS[currentIdx];
+  const nextLine = LYRICS[currentIdx + 1];
+
+  let hold = getHoldMs(currentLine);
+  
+  if(nextLine && nextLine.startMs !== null && currentLine.startMs !== null) {
+      hold = nextLine.startMs - currentLine.startMs;
+      hold = Math.max(10, hold);
+  }
+
+  setTimeout(() => { currentIdx++; advance(); }, hold);
 }
 
 // ── Visualizer ───────────────────────────────────────
@@ -371,7 +392,56 @@ for(let i = 0; i < BAR_COUNT; i++){
   mirror.appendChild(b);
 }
 
-setTimeout(advance, 200);
+// Lógica de Renderizado Determinista
+window.IS_RENDERING = false; 
+
+function seekTo(ms) {
+  let newIdx = 0;
+  for (let i = 0; i < LYRICS.length; i++) {
+    if (LYRICS[i].startMs !== null && LYRICS[i].startMs <= ms) {
+      newIdx = i;
+    } else if (LYRICS[i].startMs === null) {
+      if (i * 3000 <= ms) newIdx = i;
+    }
+  }
+  
+  if (currentIdx !== newIdx) {
+    currentIdx = newIdx;
+    updateLines();
+  }
+
+  if (audioEl && audioEl.src && Math.abs(audioEl.currentTime - ms/1000) > 0.1) {
+    audioEl.currentTime = ms / 1000;
+  }
+
+  if (window.gsap) {
+    gsap.globalTimeline.pause();
+    gsap.globalTimeline.seek(ms / 1000);
+  }
+}
+
+window.seekTo = seekTo;
+
+function startLogic() {
+  if (window.IS_RENDERING) return;
+
+  // 1. La música arranca en T=0
+  if (audioEl && audioEl.src) {
+    audioEl.play().catch(e => console.log("Autoplay blocked. Click para sonar."));
+  }
+
+  // 2. Calculamos cuánto tiempo esperar para el primer verso (SRT)
+  const firstLine = LYRICS[0];
+  const delayToFirst = (firstLine && firstLine.startMs !== null) ? firstLine.startMs : 0;
+
+  // 3. Programamos la entrada de la primera letra
+  setTimeout(() => {
+    advance();
+  }, delayToFirst);
+}
+
+// Pequeño margen para carga de assets
+setTimeout(startLogic, 500);
 </script>
 </body>
 </html>
