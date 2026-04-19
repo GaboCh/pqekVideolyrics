@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lyric Video — Grunge Brush</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rock+Salt&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{
+    width:100%;height:100%;overflow:hidden;
+    background:#8b0000;
+    font-family:'Bebas Neue',cursive;
+  }
+
+  /* ── Background texture ── */
+  .bg-noise{
+    position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(ellipse 120% 60% at 50% 50%, #6b0000 0%, #8b0000 40%, #3d0000 100%);
+  }
+  .bg-noise::after{
+    content:'';position:absolute;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+    opacity:0.18;
+    mix-blend-mode:overlay;
+  }
+
+  /* ── Splatter SVG blobs ── */
+  .splatter-container{
+    position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;
+  }
+  .splatter{
+    position:absolute;
+    width:clamp(80px,18vw,200px);
+    height:auto;
+    opacity:0.55;
+    filter:drop-shadow(0px 2px 4px rgba(0,0,0,0.5));
+  }
+
+  /* ── Brush stroke card (center) ── */
+  .brush-card{
+    position:fixed;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    z-index:10;
+    width:min(820px, 92vw);
+    padding:clamp(28px,5vw,60px) clamp(22px,6vw,80px);
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;
+  }
+  .brush-card::before{
+    content:'';
+    position:absolute;inset:0;
+    background:#111;
+    clip-path:polygon(
+      2% 14%,  6% 3%,  14% 10%,  22% 2%,  30% 8%,
+      38% 1%,  48% 6%,  56% 0%,  65% 5%,  74% 1%,
+      82% 8%,  90% 2%,  96% 10%,  100% 6%,
+      98% 86%,  94% 97%,  86% 90%,  78% 98%,  70% 92%,
+      62% 99%,  53% 94%,  44% 100%,  36% 95%,  27% 99%,
+      18% 92%,  10% 98%,  4% 90%,  0% 94%
+    );
+    opacity:0.85;
+    filter:blur(0.5px);
+  }
+
+  /* ── Lyric text ── */
+  #lyric-display{
+    position:relative;z-index:2;
+    text-align:center;
+    width:100%;
+    font-family:'Bebas Neue',cursive;
+    font-size:clamp(3rem,10vw,9rem);
+    line-height:0.95;
+    letter-spacing:0.04em;
+    color:#fff;
+    text-shadow:
+      3px 3px 0 #000,
+      -2px -2px 0 #000,
+      4px 4px 8px rgba(0,0,0,0.7),
+      0 0 30px rgba(255,255,255,0.15);
+    opacity:0;
+    filter:blur(0px);
+    transform:translateY(0px) scale(1);
+  }
+
+  /* ── Song title overlay ── */
+  #song-title{
+    position:fixed;
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    z-index:20;
+    text-align:center;
+    font-family:'Rock Salt',cursive;
+    font-size:clamp(2rem,6vw,5.5rem);
+    color:#fff;
+    text-shadow:4px 4px 0 #000, -3px -3px 0 #000;
+    line-height:1.1;
+    opacity:0;
+    width:85%;
+  }
+  #artist-name{
+    position:fixed;
+    bottom:clamp(20px,4vw,50px);left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    font-family:'Permanent Marker',cursive;
+    font-size:clamp(1rem,3vw,2rem);
+    color:rgba(255,255,255,0.6);
+    letter-spacing:0.1em;
+    opacity:0;
+  }
+
+  /* ── Ink splat dot particles ── */
+  .ink-dot{
+    position:fixed;
+    border-radius:50%;
+    background:#000;
+    pointer-events:none;z-index:2;
+    opacity:0;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-noise"></div>
+
+<!-- SVG splatter blobs -->
+<div class="splatter-container" id="splatters">
+  <svg class="splatter" style="top:8%;left:5%;transform:rotate(-15deg)" viewBox="0 0 100 80" fill="#000" opacity="0.6">
+    <ellipse cx="30" cy="40" rx="28" ry="18"/>
+    <ellipse cx="60" cy="30" rx="18" ry="10" transform="rotate(-20,60,30)"/>
+    <circle cx="80" cy="50" r="8"/>
+    <circle cx="15" cy="20" r="5"/>
+    <circle cx="70" cy="65" r="6"/>
+    <ellipse cx="45" cy="65" rx="10" ry="5" transform="rotate(30,45,65)"/>
+  </svg>
+  <svg class="splatter" style="bottom:10%;right:6%;transform:rotate(10deg)" viewBox="0 0 120 90" fill="#000" opacity="0.55">
+    <ellipse cx="60" cy="45" rx="55" ry="30"/>
+    <circle cx="10" cy="20" r="7"/>
+    <circle cx="110" cy="70" r="6"/>
+    <ellipse cx="90" cy="20" rx="14" ry="7" transform="rotate(-30,90,20)"/>
+    <circle cx="30" cy="75" r="5"/>
+  </svg>
+  <svg class="splatter" style="top:15%;right:8%;transform:rotate(5deg)" viewBox="0 0 80 60" fill="#000" opacity="0.45">
+    <circle cx="40" cy="30" r="25"/>
+    <ellipse cx="10" cy="10" rx="8" ry="4"/>
+    <circle cx="68" cy="50" r="6"/>
+  </svg>
+  <svg class="splatter" style="bottom:20%;left:10%;transform:rotate(-8deg)" viewBox="0 0 70 50" fill="#000" opacity="0.4">
+    <ellipse cx="35" cy="25" rx="32" ry="16"/>
+    <circle cx="5" cy="40" r="4"/>
+    <circle cx="65" cy="10" r="5"/>
+  </svg>
+</div>
+
+<div class="brush-card">
+  <div id="lyric-display">{{FIRST_LINE}}</div>
+</div>
+
+<div id="song-title">{{SONG_NAME}}</div>
+<div id="artist-name">{{ARTIST_NAME}}</div>
+
+<script>
+const LYRICS = [{{LYRICS_JSON}}];
+let currentIndex = 0;
+const display = $('#lyric-display');
+const songTitle = $('#song-title');
+const artistName = $('#artist-name');
+
+function spawnInkDots(count) {
+  for (let i = 0; i < count; i++) {
+    const dot = $('<div class="ink-dot"></div>');
+    const size = Math.random() * 12 + 4;
+    dot.css({
+      width: size, height: size,
+      left: (20 + Math.random() * 60) + '%',
+      top: (30 + Math.random() * 40) + '%',
+    });
+    $('body').append(dot);
+    gsap.fromTo(dot[0],
+      { opacity: 0, scale: 0, x: (Math.random()-0.5)*60, y: (Math.random()-0.5)*60 },
+      { opacity: Math.random()*0.6+0.2, scale: 1, duration: 0.3, ease: 'power2.out',
+        onComplete: () => {
+          gsap.to(dot[0], { opacity:0, duration:0.4, delay:0.3, onComplete:()=>dot.remove() });
+        }
+      }
+    );
+  }
+}
+
+function showLine(text, onComplete) {
+  if (!text || !text.trim()) {
+    setTimeout(onComplete, 600);
+    return;
+  }
+  display.text(text);
+  spawnInkDots(8);
+  gsap.fromTo(display[0],
+    { opacity: 0, scale: 1.18, filter:'blur(4px)' },
+    { opacity: 1, scale: 1, filter:'blur(0px)', duration: 0.22, ease:'power3.out',
+      onComplete: () => {
+        const hold = Math.max(1200, text.length * 55);
+        setTimeout(() => {
+          gsap.to(display[0], {
+            opacity: 0, scale: 0.88, filter:'blur(6px)', duration: 0.18, ease:'power3.in',
+            onComplete: () => {
+              setTimeout(onComplete, 120);
+            }
+          });
+        }, hold);
+      }
+    }
+  );
+}
+
+function nextLine() {
+  if (currentIndex >= LYRICS.length) return;
+  showLine(LYRICS[currentIndex], () => {
+    currentIndex++;
+    nextLine();
+  });
+}
+
+// Intro
+gsap.fromTo(songTitle[0],
+  {opacity:0, y:40, filter:'blur(8px)'},
+  {opacity:1, y:0, filter:'blur(0px)', duration:0.7, ease:'power3.out',
+    onComplete: () => {
+      gsap.fromTo(artistName[0],
+        {opacity:0},{opacity:1,duration:0.5},
+      );
+      setTimeout(() => {
+        gsap.to([songTitle[0], artistName[0]], {opacity:0, duration:0.4,
+          onComplete: () => { nextLine(); }
+        });
+      }, 2800);
+    }
+  }
+);
+</script>
+</body>
+</html>

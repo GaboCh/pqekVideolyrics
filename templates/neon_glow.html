@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lyric Video — Neon Glow</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Space Grotesk',sans-serif}
+  canvas{position:fixed;top:0;left:0;z-index:0}
+  .lyric-line{
+    font-size:clamp(1.8rem,5vw,5rem);
+    font-weight:700;
+    letter-spacing:0.06em;
+    color:#fff;
+    text-align:center;
+    padding:0 40px;
+    opacity:0;
+    position:absolute;
+    text-shadow:
+      0 0 12px #00ffff,
+      0 0 30px rgba(0,255,255,0.7),
+      0 0 60px rgba(0,200,255,0.4),
+      0 0 6px #ff00cc,
+      0 0 20px rgba(255,0,200,0.5);
+    filter:blur(12px);
+    width:100%;
+  }
+  #overlay{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    z-index:10;pointer-events:none;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  #song-title{
+    position:fixed;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;z-index:11;
+    color:#fff;
+    font-size:clamp(2.5rem,7vw,6rem);
+    font-weight:700;letter-spacing:0.04em;
+    text-shadow:0 0 20px #00ffff,0 0 50px #ff00cc,0 0 100px #00ffff;
+    opacity:0;
+  }
+  #artist-title{
+    position:fixed;top:calc(50% + clamp(3rem,6vw,6rem));left:50%;
+    transform:translateX(-50%);
+    text-align:center;z-index:11;
+    color:rgba(0,255,255,0.7);
+    font-size:clamp(0.9rem,1.6vw,1.4rem);
+    letter-spacing:0.25em;text-transform:uppercase;
+    opacity:0;
+  }
+  /* Scanline overlay */
+  body::after{
+    content:'';position:fixed;inset:0;z-index:5;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="song-title">{{SONG_NAME}}</div>
+<div id="artist-title">{{ARTIST_NAME}}</div>
+<div id="overlay"></div>
+
+<script>
+// ── THREE.JS ────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('bg'),antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,300);
+camera.position.z=20;
+
+// Circular disc texture
+const disc=(()=>{
+  const c=document.createElement('canvas');c.width=64;c.height=64;
+  const cx=c.getContext('2d');
+  const g=cx.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)');
+  g.addColorStop(0.5,'rgba(255,255,255,0.6)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  cx.fillStyle=g;cx.beginPath();cx.arc(32,32,32,0,Math.PI*2);cx.fill();
+  return new THREE.CanvasTexture(c);
+})();
+
+// Two-color particle field (cyan + magenta)
+const COUNT=10000;
+const geo=new THREE.BufferGeometry();
+const pos=new Float32Array(COUNT*3);
+const col=new Float32Array(COUNT*3);
+const clr=new THREE.Color();
+for(let i=0;i<COUNT;i++){
+  const spread=80;
+  pos[i*3]=(Math.random()-0.5)*spread;
+  pos[i*3+1]=(Math.random()-0.5)*spread;
+  pos[i*3+2]=(Math.random()-0.5)*spread;
+  // alternate cyan/magenta
+  if(Math.random()<0.5){clr.setHSL(0.5+Math.random()*0.05,1,0.55+Math.random()*0.3);}
+  else{clr.setHSL(0.83+Math.random()*0.06,1,0.55+Math.random()*0.3);}
+  col[i*3]=clr.r;col[i*3+1]=clr.g;col[i*3+2]=clr.b;
+}
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const mat=new THREE.PointsMaterial({size:0.4,map:disc,alphaTest:0.001,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,transparent:true});
+scene.add(new THREE.Points(geo,mat));
+
+// Neon torus
+const torusMat=new THREE.MeshBasicMaterial({color:0x00ffcc,transparent:true,opacity:0.18,wireframe:true});
+const torus=new THREE.Mesh(new THREE.TorusGeometry(5,0.08,8,120),torusMat);
+scene.add(torus);
+gsap.to(torus.rotation,{y:Math.PI*2,duration:12,repeat:-1,ease:'none'});
+gsap.to(torusMat,{opacity:0.38,duration:1.8,yoyo:true,repeat:-1,ease:'sine.inOut'});
+
+// Point lights
+const p1=new THREE.PointLight(0x00ffff,4,30);p1.position.set(6,0,5);scene.add(p1);
+const p2=new THREE.PointLight(0xff00cc,4,30);p2.position.set(-6,0,-5);scene.add(p2);
+gsap.to(p1,{intensity:8,duration:1.2,yoyo:true,repeat:-1,ease:'power1.inOut'});
+gsap.to(p2,{intensity:8,duration:0.9,yoyo:true,repeat:-1,ease:'power1.inOut'});
+
+window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
+
+let t=0;
+function animate(){requestAnimationFrame(animate);t+=0.004;
+  scene.getObjectByProperty('isPoints',true)&&(scene.getObjectByProperty('isPoints',true).rotation.y+=0.0007,scene.getObjectByProperty('isPoints',true).rotation.x+=0.0003);
+  p1.position.x=Math.sin(t)*8;p1.position.y=Math.cos(t*0.7)*4;
+  p2.position.x=-Math.sin(t)*8;p2.position.y=Math.cos(t*0.5)*4;
+  renderer.render(scene,camera);}
+animate();
+
+// ── GSAP LYRICS ────────────────────────────────────────
+const LYRICS=[{{LYRICS_JSON}}];
+const overlay=document.getElementById('overlay');
+const songEl=document.getElementById('song-title');
+const artEl=document.getElementById('artist-title');
+
+// glitch keyframes
+function glitch(el){
+  gsap.to(el,{skewX:8,duration:0.05,yoyo:true,repeat:3,ease:'none',onComplete:()=>gsap.set(el,{skewX:0})});
+}
+
+const introTl=gsap.timeline();
+introTl
+  .fromTo(songEl,{opacity:0,y:30,filter:'blur(20px)'},{opacity:1,y:0,filter:'blur(0px)',duration:1,ease:'power3.out'})
+  .fromTo(artEl,{opacity:0},{opacity:1,duration:0.6},'-=0.3')
+  .call(()=>glitch(songEl),null,'+=0.5')
+  .to([songEl,artEl],{opacity:0,duration:0.5,delay:2,ease:'power2.in'});
+
+const lyrTl=gsap.timeline({delay:4.2});
+LYRICS.forEach(txt=>{
+  if(!txt.trim()){lyrTl.to({},{duration:0.7});return;}
+  const el=document.createElement('div');
+  el.className='lyric-line';
+  el.textContent=txt;
+  overlay.appendChild(el);
+  lyrTl
+    .fromTo(el,{opacity:0,y:45,filter:'blur(16px)',scaleX:0.95},{opacity:1,y:0,filter:'blur(0px)',scaleX:1,duration:0.6,ease:'power2.out'})
+    .call(()=>glitch(el),null,'+=0.3')
+    .to(el,{opacity:0,y:-30,filter:'blur(8px)',duration:0.45,ease:'power2.in'},'+=2');
+});
+</script>
+</body>
+</html>

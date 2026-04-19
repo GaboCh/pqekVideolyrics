@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lyric Video — Space Cosmos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#01010f;font-family:'Space Grotesk',sans-serif}
+  canvas{position:fixed;top:0;left:0;z-index:0}
+  #overlay{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    z-index:10;pointer-events:none;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:8px;
+  }
+  .lyric-line{
+    font-size:clamp(1.6rem,4.5vw,4.5rem);
+    font-weight:700;
+    letter-spacing:0.05em;
+    color:#fff;
+    text-align:center;
+    padding:0 40px;
+    opacity:0;
+    position:absolute;
+    text-shadow:
+      0 0 20px rgba(190,140,255,0.9),
+      0 0 50px rgba(140,100,255,0.6),
+      0 0 90px rgba(100,60,220,0.3);
+    transform:translateY(0px);
+    filter:blur(12px);
+    width:100%;
+  }
+  #artist-title{
+    font-family:'Space Grotesk',sans-serif;
+    position:fixed;
+    top:40px;left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    z-index:11;
+    color:rgba(255,255,255,0.6);
+    font-size:clamp(0.9rem,1.5vw,1.3rem);
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    opacity:0;
+  }
+  #song-title{
+    font-family:'Space Grotesk',sans-serif;
+    position:fixed;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    z-index:11;
+    color:#fff;
+    font-size:clamp(2.5rem,7vw,7rem);
+    font-weight:700;
+    letter-spacing:0.04em;
+    text-shadow:0 0 30px rgba(180,140,255,0.8),0 0 80px rgba(120,80,230,0.5);
+    opacity:0;
+    white-space:nowrap;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div id="song-title">{{SONG_NAME}}</div>
+<div id="artist-title">{{ARTIST_NAME}}</div>
+<div id="overlay"></div>
+
+<script>
+// ── THREE.JS SCENE ──────────────────────────────────────
+const canvas = document.getElementById('bg');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x01010f);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x01010f, 0.004);
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 300);
+camera.position.set(0, 2, 18);
+
+// Circular particle texture
+const disc = (()=>{
+  const c = document.createElement('canvas'); c.width=64; c.height=64;
+  const cx = c.getContext('2d');
+  const grd = cx.createRadialGradient(32,32,0,32,32,32);
+  grd.addColorStop(0,'rgba(255,255,255,1)');
+  grd.addColorStop(0.4,'rgba(255,255,255,0.8)');
+  grd.addColorStop(1,'rgba(255,255,255,0)');
+  cx.fillStyle=grd; cx.beginPath(); cx.arc(32,32,32,0,Math.PI*2); cx.fill();
+  return new THREE.CanvasTexture(c);
+})();
+
+// Galaxy particle system
+const COUNT = 9000;
+const geo = new THREE.BufferGeometry();
+const pos = new Float32Array(COUNT*3);
+const col = new Float32Array(COUNT*3);
+const clr = new THREE.Color();
+for(let i=0;i<COUNT;i++){
+  const arm = Math.floor(Math.random()*3);
+  const r = 2 + Math.pow(Math.random(),0.5)*70;
+  const spinAngle = r * 0.25;
+  const armAngle = (arm/3)*Math.PI*2;
+  const theta = armAngle + spinAngle + (Math.random()-0.5)*0.6;
+  const y = (Math.random()-0.5)*6 * (1-(r/70));
+  pos[i*3]   = r*Math.cos(theta);
+  pos[i*3+1] = y;
+  pos[i*3+2] = r*Math.sin(theta);
+  const h = 0.67 + Math.random()*0.18;
+  const s = 0.7 + Math.random()*0.3;
+  const l = 0.55 + Math.random()*0.35;
+  clr.setHSL(h,s,l);
+  col[i*3]=clr.r; col[i*3+1]=clr.g; col[i*3+2]=clr.b;
+}
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const mat = new THREE.PointsMaterial({
+  size:0.45, map:disc, alphaTest:0.001,
+  sizeAttenuation:true, depthWrite:false,
+  blending:THREE.AdditiveBlending,
+  vertexColors:true, transparent:true,
+});
+const galaxy = new THREE.Points(geo, mat);
+scene.add(galaxy);
+
+// Glowing central nebula sphere
+const nebMat = new THREE.MeshBasicMaterial({color:0x6644cc,transparent:true,opacity:0.06,wireframe:false});
+const neb = new THREE.Mesh(new THREE.IcosahedronGeometry(3,4), nebMat);
+scene.add(neb);
+
+// Pulsing ring
+const ringGeo = new THREE.RingGeometry(4,4.18,120);
+const ringMat = new THREE.MeshBasicMaterial({color:0xaa88ff,transparent:true,opacity:0.18,side:THREE.DoubleSide});
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.rotation.x = -0.3;
+scene.add(ring);
+gsap.to(ring.scale,{x:1.08,y:1.08,duration:2.5,yoyo:true,repeat:-1,ease:'sine.inOut'});
+gsap.to(ringMat,{opacity:0.35,duration:2.5,yoyo:true,repeat:-1,ease:'sine.inOut'});
+
+// Resize
+window.addEventListener('resize',()=>{
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// Animation
+let time=0;
+function animate(){
+  requestAnimationFrame(animate);
+  time+=0.001;
+  galaxy.rotation.y += 0.0006;
+  neb.rotation.y += 0.0012;
+  neb.rotation.x += 0.0005;
+  camera.position.y = Math.sin(time*0.5)*0.5 + 2;
+  renderer.render(scene,camera);
+}
+animate();
+
+// ── GSAP LYRICS ──────────────────────────────────────
+const LYRICS = [{{LYRICS_JSON}}];
+
+const overlay = document.getElementById('overlay');
+const songTitleEl = document.getElementById('song-title');
+const artistEl = document.getElementById('artist-title');
+
+// Intro animation
+const introTl = gsap.timeline();
+introTl
+  .fromTo(songTitleEl,{opacity:0,y:30,filter:'blur(20px)'},{opacity:1,y:0,filter:'blur(0px)',duration:1.2,ease:'power3.out'})
+  .fromTo(artistEl,{opacity:0,y:10},{opacity:1,y:0,duration:0.8,ease:'power2.out'},'-=0.5')
+  .to([songTitleEl,artistEl],{opacity:0,duration:0.6,delay:2.5,ease:'power2.in'});
+
+// Lyric lines
+const lyricsTimeline = gsap.timeline({delay:4.5});
+LYRICS.forEach((txt)=>{
+  if(!txt.trim()){
+    lyricsTimeline.to({},{duration:0.8});
+    return;
+  }
+  const el = document.createElement('div');
+  el.className='lyric-line';
+  el.textContent=txt;
+  overlay.appendChild(el);
+  lyricsTimeline
+    .fromTo(el,
+      {opacity:0,y:40,filter:'blur(16px)'},
+      {opacity:1,y:0,filter:'blur(0px)',duration:0.65,ease:'power2.out'}
+    )
+    .to(el,
+      {opacity:0,y:-28,filter:'blur(8px)',duration:0.5,ease:'power2.in'},
+      '+=2.2'
+    );
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lyric Video — Snow Globe</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Raleway:wght@300;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2a;font-family:'Raleway',sans-serif}
+
+  /* ── BG gradient ── */
+  #bg{
+    position:fixed;inset:0;z-index:0;
+    background:radial-gradient(ellipse 80% 80% at 50% 60%,#1a2e4a 0%,#0d1b2a 70%,#06101a 100%);
+  }
+
+  /* ── Snow Globe container ── */
+  #globe-wrap{
+    position:fixed;
+    top:50%;left:50%;
+    transform:translate(-50%,-58%);
+    z-index:10;
+    display:flex;flex-direction:column;align-items:center;
+  }
+
+  /* Glass sphere */
+  #globe{
+    width:clamp(220px,38vw,380px);
+    height:clamp(220px,38vw,380px);
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18) 0%, rgba(200,230,255,0.06) 60%, rgba(50,120,200,0.04) 100%);
+    border:2px solid rgba(200,230,255,0.25);
+    box-shadow:
+      0 0 60px rgba(100,180,255,0.12),
+      inset -20px -20px 60px rgba(50,100,180,0.25),
+      inset 8px 8px 20px rgba(255,255,255,0.12),
+      0 30px 60px rgba(0,0,0,0.6);
+    position:relative;
+    overflow:hidden;
+    cursor:pointer;
+  }
+  /* Shine */
+  #globe::before{
+    content:'';position:absolute;
+    top:8%;left:12%;
+    width:28%;height:18%;
+    background:radial-gradient(ellipse,rgba(255,255,255,0.35) 0%,transparent 100%);
+    border-radius:50%;rotate:-20deg;
+  }
+  /* Bottom highlight */
+  #globe::after{
+    content:'';position:absolute;
+    bottom:12%;left:20%;right:20%;
+    height:6%;
+    background:rgba(255,255,255,0.08);
+    border-radius:50%;
+    filter:blur(4px);
+  }
+
+  /* Canvas inside globe */
+  #snow-canvas{position:absolute;inset:0;border-radius:50%;}
+
+  /* Globe scene label */
+  #scene-label{
+    position:absolute;
+    bottom:18%;left:50%;transform:translateX(-50%);
+    font-family:'Cinzel Decorative',cursive;
+    font-size:clamp(0.5rem,1.4vw,0.95rem);
+    color:rgba(255,255,255,0.4);
+    letter-spacing:0.15em;
+    white-space:nowrap;
+    text-shadow:0 0 10px rgba(150,200,255,0.5);
+  }
+
+  /* Globe base */
+  #globe-base{
+    width:clamp(140px,24vw,250px);
+    height:clamp(30px,5vw,50px);
+    background:linear-gradient(180deg,#1a3050 0%,#0f2030 100%);
+    border:2px solid rgba(100,160,220,0.3);
+    border-radius:8px 8px 12px 12px;
+    position:relative;
+    box-shadow:0 8px 30px rgba(0,0,0,0.5);
+    margin-top:-2px;
+  }
+  #globe-base::before{
+    content:'';position:absolute;
+    top:8px;left:50%;transform:translateX(-50%);
+    font-family:'Cinzel Decorative',cursive;
+    font-size:0;
+    width:60%;height:2px;
+    background:rgba(100,160,220,0.2);
+    border-radius:2px;
+  }
+
+  /* ── Lyric text ── */
+  #lyric-wrap{
+    position:fixed;
+    bottom:clamp(16px,8vh,80px);
+    left:50%;transform:translateX(-50%);
+    z-index:20;
+    width:min(800px,90vw);
+    text-align:center;
+    pointer-events:none;
+  }
+  #lyric{
+    font-family:'Raleway',sans-serif;
+    font-weight:700;
+    font-size:clamp(1.4rem,4vw,3.8rem);
+    color:#e8f4ff;
+    letter-spacing:0.04em;
+    text-shadow:
+      0 0 20px rgba(150,210,255,0.8),
+      0 0 50px rgba(100,180,255,0.4);
+    opacity:0;
+    filter:blur(8px);
+  }
+
+  /* ── Song title ── */
+  #song-title{
+    position:fixed;top:clamp(16px,4vw,48px);left:50%;
+    transform:translateX(-50%);z-index:20;
+    font-family:'Cinzel Decorative',cursive;
+    font-size:clamp(1.4rem,4vw,3.6rem);
+    color:#e8f4ff;
+    text-shadow:0 0 30px rgba(150,210,255,0.7),0 0 60px rgba(100,180,255,0.4);
+    opacity:0;text-align:center;padding:0 20px;
+    white-space:nowrap;
+  }
+  #artist{
+    position:fixed;top:calc(clamp(16px,4vw,48px) + clamp(2rem,4vw,4rem));left:50%;
+    transform:translateX(-50%);z-index:20;
+    font-family:'Raleway',sans-serif;font-weight:300;
+    font-size:clamp(0.8rem,1.8vw,1.4rem);
+    color:rgba(200,230,255,0.55);
+    letter-spacing:0.22em;text-transform:uppercase;opacity:0;
+  }
+
+  /* ── Floating snowflake bg ── */
+  .bg-snow{
+    position:fixed;z-index:2;pointer-events:none;
+    color:rgba(255,255,255,0.25);
+    font-size:clamp(8px,1.5vw,16px);
+    animation:fall linear infinite;
+  }
+  @keyframes fall{
+    from{transform:translateY(-20px) rotate(0deg)}
+    to{transform:translateY(105vh) rotate(360deg)}
+  }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+
+<!-- Floating bg snowflakes (pure CSS) -->
+<script>
+for(let i=0;i<25;i++){
+  const s=document.createElement('div');
+  s.className='bg-snow';s.textContent='❄';
+  s.style.left=(Math.random()*100)+'%';
+  s.style.animationDuration=(6+Math.random()*12)+'s';
+  s.style.animationDelay=(-Math.random()*15)+'s';
+  s.style.fontSize=(8+Math.random()*16)+'px';
+  s.style.opacity=(0.1+Math.random()*0.3);
+  document.body.appendChild(s);
+}
+</script>
+
+<div id="globe-wrap">
+  <div id="globe">
+    <canvas id="snow-canvas"></canvas>
+    <div id="scene-label">❄ {{SONG_NAME}} ❄</div>
+  </div>
+  <div id="globe-base"></div>
+</div>
+
+<div id="song-title">{{SONG_NAME}}</div>
+<div id="artist">{{ARTIST_NAME}}</div>
+
+<div id="lyric-wrap">
+  <div id="lyric"></div>
+</div>
+
+<script>
+// ── Canvas snowflakes inside globe ────────────────────
+const globeEl = document.getElementById('globe');
+const cnv     = document.getElementById('snow-canvas');
+
+function resizeCnv(){
+  cnv.width  = globeEl.offsetWidth;
+  cnv.height = globeEl.offsetHeight;
+}
+resizeCnv();
+window.addEventListener('resize', resizeCnv);
+
+const ctx = cnv.getContext('2d');
+const R = () => cnv.width / 2;
+
+const flakes = Array.from({length: 120}, () => ({
+  x: Math.random() * cnv.width,
+  y: Math.random() * cnv.height,
+  r: 0.8 + Math.random() * 2.5,
+  vx: (Math.random() - 0.5) * 0.4,
+  vy: 0.3 + Math.random() * 0.8,
+  alpha: 0.4 + Math.random() * 0.6,
+}));
+
+let angle = 0;
+let spinning = false;
+let spinSpeed = 0;
+
+function drawGlobe(){
+  const w = cnv.width, h = cnv.height, r = w/2;
+  ctx.clearRect(0,0,w,h);
+
+  // Clip to circle
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(r,r,r-2,0,Math.PI*2);
+  ctx.clip();
+
+  // Interior gradient
+  const grad = ctx.createRadialGradient(r,r,r*0.1,r,r,r);
+  grad.addColorStop(0,'rgba(30,60,100,0.95)');
+  grad.addColorStop(0.6,'rgba(15,35,70,0.98)');
+  grad.addColorStop(1,'rgba(5,15,35,1)');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,w,h);
+
+  // Snowflakes
+  ctx.save();
+  if(spinning){
+    ctx.translate(r,r);
+    ctx.rotate(angle * 0.02);
+    ctx.translate(-r,-r);
+  }
+  flakes.forEach(f=>{
+    f.x += f.vx;
+    f.y += f.vy;
+    if(f.y > h-8){f.y=4;f.x=Math.random()*w;}
+    if(f.x<0||f.x>w) f.x=Math.random()*w;
+    ctx.beginPath();
+    ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(220,240,255,${f.alpha})`;
+    ctx.fill();
+  });
+  ctx.restore();
+
+  // Bottom pile
+  ctx.beginPath();
+  ctx.ellipse(r, h*0.85, r*0.55, r*0.09, 0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(220,240,255,0.3)';
+  ctx.fill();
+
+  ctx.restore();
+
+  if(spinning){angle++;spinSpeed*=0.98;if(spinSpeed<0.1)spinning=false;}
+  requestAnimationFrame(drawGlobe);
+}
+drawGlobe();
+
+// Click globe to spin
+globeEl.addEventListener('click',()=>{
+  spinning=true; spinSpeed=15;
+  // burst extra flakes
+  flakes.forEach(f=>{f.vy=1+Math.random()*3;});
+  setTimeout(()=>flakes.forEach(f=>f.vy=0.3+Math.random()*0.8),800);
+});
+
+// ── Lyrics ────────────────────────────────────────────
+const LYRICS = [{{LYRICS_JSON}}];
+let idx = 0;
+const lyricEl   = document.getElementById('lyric');
+const songTitleEl = document.getElementById('song-title');
+const artistEl  = document.getElementById('artist');
+
+function showLine(text, onDone){
+  if(!text||!text.trim()){setTimeout(onDone,700);return;}
+  lyricEl.textContent = text;
+  const hold = Math.max(1600, text.length * 60);
+  gsap.timeline()
+    .fromTo(lyricEl,
+      {opacity:0, y:20, filter:'blur(12px)'},
+      {opacity:1, y:0,  filter:'blur(0px)', duration:0.7, ease:'power2.out'}
+    )
+    .to(lyricEl,
+      {opacity:0, y:-18, filter:'blur(8px)', duration:0.5, ease:'power2.in', delay:hold/1000},
+      '+= 0'
+    )
+    .call(onDone);
+}
+
+function next(){
+  if(idx>=LYRICS.length) return;
+  showLine(LYRICS[idx++], next);
+}
+
+const intro = gsap.timeline();
+intro
+  .fromTo(songTitleEl,{opacity:0,y:24,filter:'blur(12px)'},{opacity:1,y:0,filter:'blur(0px)',duration:1,ease:'power3.out'})
+  .fromTo(artistEl,{opacity:0},{opacity:1,duration:0.6},'-=0.3')
+  .to([songTitleEl,artistEl],{opacity:0,duration:0.5,delay:2.5,ease:'power2.in',
+    onComplete:next
+  });
+</script>
+</body>
+</html>

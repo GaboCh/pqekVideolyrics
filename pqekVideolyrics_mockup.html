@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pqekVideolyrics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:        #0d0d0f;
+  --surface:   #141416;
+  --surface-2: #1a1a1e;
+  --surface-3: #202026;
+  --border:    rgba(255,255,255,0.08);
+  --text:      #e8e8ed;
+  --muted:     #7a7a8a;
+  --faint:     #3a3a4a;
+  --accent:    #7c6af7;
+  --accent-h:  #9b8cff;
+  --accent-glow: rgba(124,106,247,0.25);
+  --green:     #4ade80;
+  --radius:    10px;
+  --font: 'Inter', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+}
+
+html { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+body { min-height: 100vh; }
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 56px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: var(--font-display); font-size: 18px; font-weight: 700;
+  color: var(--text); display: flex; align-items: center; gap: 8px;
+}
+.logo span { color: var(--accent); }
+.logo-icon { width: 28px; height: 28px; }
+
+/* ── TABS ── */
+.tabs-wrap { padding: 0 28px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.tabs { display: flex; gap: 0; }
+.tab {
+  padding: 14px 22px; font-size: 13px; font-weight: 500; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color 150ms, border-color 150ms; white-space: nowrap;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface-3); font-size: 10px; margin-right: 6px; color: var(--muted);
+}
+.tab.active .tab-num { background: var(--accent-glow); color: var(--accent); }
+
+/* ── MAIN CONTENT ── */
+.content { padding: 28px; max-width: 1400px; margin: 0 auto; }
+
+/* ── TAB PANEL ── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── GRID 2 COL ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* ── CARD ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.card-title {
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.card-title svg { opacity: .6; }
+
+/* ── FORM ELEMENTS ── */
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+textarea, input, select {
+  width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 13px;
+  padding: 10px 12px; outline: none; transition: border-color 150ms;
+  appearance: none; -webkit-appearance: none;
+}
+textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+textarea { resize: vertical; line-height: 1.6; }
+.form-row { margin-bottom: 14px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a8a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px; cursor: pointer;
+}
+option { background: var(--surface-2); }
+
+/* ── STYLE CHIPS ── */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chip {
+  padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+  transition: all 150ms; background: var(--surface-2);
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.selected { background: var(--accent-glow); border-color: var(--accent); color: var(--accent-h); }
+
+/* ── BTN ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 22px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 150ms; font-family: var(--font);
+}
+.btn-primary {
+  background: var(--accent); color: #fff; width: 100%; margin-top: 8px;
+}
+.btn-primary:hover { background: var(--accent-h); box-shadow: 0 0 20px var(--accent-glow); }
+.btn-ghost {
+  background: transparent; color: var(--muted); border: 1px solid var(--border);
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── PREVIEW IFRAME AREA ── */
+.preview-area {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); height: 100%; min-height: 500px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.preview-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.preview-dots { display: flex; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot-r { background: #ff5f57; }
+.dot-y { background: #febc2e; }
+.dot-g { background: #28c840; }
+.preview-label { font-size: 11px; color: var(--muted); }
+.preview-body {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.preview-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  color: var(--faint); text-align: center;
+}
+.preview-placeholder svg { opacity: .3; }
+.preview-placeholder p { font-size: 12px; color: var(--muted); max-width: 200px; line-height: 1.6; }
+
+/* Animated preview after generate */
+.preview-live {
+  width: 100%; height: 100%; background: #000;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px; text-align: center; position: relative;
+}
+.preview-live.show { display: flex; }
+.preview-bg-particles {
+  position: absolute; inset: 0; overflow: hidden;
+}
+.particle {
+  position: absolute; border-radius: 50%;
+  background: var(--accent); opacity: .15;
+  animation: float linear infinite;
+}
+@keyframes float {
+  0% { transform: translateY(100%) scale(0); opacity: 0; }
+  10% { opacity: .15; }
+  90% { opacity: .1; }
+  100% { transform: translateY(-100%) scale(1.5); opacity: 0; }
+}
+.lyric-word {
+  display: inline-block; font-family: var(--font-display); font-size: 28px;
+  font-weight: 700; color: #fff; margin: 4px 8px;
+  animation: wordIn 0.4s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes wordIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lyric-line { line-height: 1.4; margin-bottom: 8px; }
+.lyric-artist { font-size: 13px; color: var(--accent); margin-top: 16px; font-weight: 500; }
+
+/* ── STATUS BAR ── */
+.status-bar {
+  display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  padding: 10px 14px; background: var(--surface-2); border-radius: 8px;
+  border: 1px solid var(--border); font-size: 12px; color: var(--muted);
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex-shrink: 0; }
+.status-dot.ready { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.loading { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── TAB 2 ── */
+.prompt-box {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; font-size: 13px; color: var(--text); font-family: var(--font);
+  width: 100%; min-height: 100px; resize: vertical; line-height: 1.6; outline: none;
+}
+.prompt-box:focus { border-color: var(--accent); }
+.suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.suggestion {
+  font-size: 11px; padding: 5px 12px; border-radius: 100px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer; transition: all 120ms;
+}
+.suggestion:hover { color: var(--text); border-color: var(--accent); }
+
+/* ── TAB 3 ── */
+.export-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+.export-card {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; cursor: pointer;
+  transition: all 150ms; text-align: center;
+}
+.export-card:hover { border-color: var(--accent); }
+.export-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+.export-card .res { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); }
+.export-card .res-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.progress-wrap { margin: 20px 0; }
+.progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.progress-track { background: var(--surface-3); border-radius: 100px; height: 6px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), var(--accent-h)); width: 0; transition: width 0.3s ease; }
+.download-btn {
+  display: none; width: 100%; padding: 14px; border-radius: 8px;
+  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3);
+  color: var(--green); font-size: 14px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-display); align-items: center; justify-content: center; gap: 10px;
+  transition: all 150ms;
+}
+.download-btn:hover { background: rgba(74,222,128,.2); }
+.download-btn.show { display: flex; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+      <circle cx="14" cy="14" r="13" stroke="#7c6af7" stroke-width="1.5"/>
+      <path d="M9 14.5 L13 10 L17 16 L20 13" stroke="#7c6af7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="14" cy="14" r="3" fill="#7c6af7" opacity=".4"/>
+    </svg>
+    pqek<span>Video</span>lyrics
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ghost" style="padding:7px 14px;font-size:12px">Docs</button>
+    <button class="btn btn-ghost" style="padding:7px 14px;font-size:12px">⚙️ Config</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)"><span class="tab-num">1</span>Generar Lyric Video</div>
+    <div class="tab" onclick="switchTab(1)"><span class="tab-num">2</span>Ajustar Estilo</div>
+    <div class="tab" onclick="switchTab(2)"><span class="tab-num">3</span>Exportar MP4</div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ═══ TAB 1 ═══ -->
+  <div class="tab-panel active" id="panel-0">
+    <div class="grid-2" style="align-items:start">
+
+      <!-- LEFT: formulario -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            Letra de la canción
+          </div>
+          <div class="form-row">
+            <textarea id="lyrics-input" rows="12" placeholder="Pega aquí la letra completa de la canción...
+
+Verso 1:
+En la oscuridad te busco
+Entre sombras y luces..."></textarea>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label>Nombre de la canción</label>
+              <input type="text" placeholder="ej. Blinding Lights" id="song-name">
+            </div>
+            <div class="form-row">
+              <label>Artista</label>
+              <input type="text" placeholder="ej. The Weeknd" id="artist-name">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            Estilo visual
+          </div>
+          <div class="chips">
+            <div class="chip selected" onclick="selectChip(this)">🌑 Dark Cinematic</div>
+            <div class="chip" onclick="selectChip(this)">⚡ Neon Glow</div>
+            <div class="chip" onclick="selectChip(this)">🌌 Space / Cosmos</div>
+            <div class="chip" onclick="selectChip(this)">◻️ Minimal White</div>
+            <div class="chip" onclick="selectChip(this)">🔥 Fire & Smoke</div>
+            <div class="chip" onclick="selectChip(this)">🌊 Ocean Wave</div>
+          </div>
+        </div>
+
+        <div id="status-bar" class="status-bar">
+          <div class="status-dot" id="status-dot"></div>
+          <span id="status-text">Listo para generar</span>
+        </div>
+
+        <button class="btn btn-primary" onclick="generatePreview()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Generar con Groq
+        </button>
+      </div>
+
+      <!-- RIGHT: preview -->
+      <div class="preview-area">
+        <div class="preview-topbar">
+          <div class="preview-dots">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+          </div>
+          <div class="preview-label">Preview — HTML animado</div>
+          <div style="font-size:11px;color:var(--faint)">720×480</div>
+        </div>
+        <div class="preview-body">
+          <!-- PLACEHOLDER -->
+          <div class="preview-placeholder" id="preview-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 8 6 4-6 4V8z"/></svg>
+            <p>El preview aparecerá aquí después de generar con Groq</p>
+          </div>
+          <!-- LIVE PREVIEW -->
+          <div class="preview-live" id="preview-live">
+            <div class="preview-bg-particles" id="particles"></div>
+            <div style="position:relative;z-index:1">
+              <div id="lyric-display"></div>
+              <div class="lyric-artist" id="preview-artist"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2 ═══ -->
+  <div class="tab-panel" id="panel-1">
+    <div class="grid-2" style="align-items:start">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Ajustar con prompt libre
+          </div>
+          <div class="form-row">
+            <label>Dile a Groq qué cambiar en el HTML</label>
+            <textarea class="prompt-box" rows="5" id="adjust-prompt" placeholder="ej. cambia el fondo a negro con estrellas, las letras deben aparecer palabra por palabra con efecto glow morado..."></textarea>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Sugerencias rápidas:</div>
+            <div class="suggestions">
+              <div class="suggestion" onclick="fillPrompt('Cambia el color de las letras a blanco brillante')">letras blancas</div>
+              <div class="suggestion" onclick="fillPrompt('Agrega partículas flotantes en el fondo')">partículas</div>
+              <div class="suggestion" onclick="fillPrompt('Letras aparecen una por una con efecto typewriter')">typewriter</div>
+              <div class="suggestion" onclick="fillPrompt('Fondo negro con gradiente de color morado a azul')">gradiente morado</div>
+              <div class="suggestion" onclick="fillPrompt('Agrega efecto glitch en las letras')">efecto glitch</div>
+              <div class="suggestion" onclick="fillPrompt('Fuente más grande y con sombra de neón')">neon shadow</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="applyAdjust()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Aplicar cambio con Groq
+          </button>
+        </div>
+      </div>
+
+      <div class="preview-area">
+        <div class="preview-topbar">
+          <div class="preview-dots">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+          </div>
+          <div class="preview-label">Preview actualizado</div>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="switchTab(0)">← Volver</button>
+        </div>
+        <div class="preview-body">
+          <div class="preview-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <p>Genera primero en Tab 1, luego ajusta aquí</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 3 ═══ -->
+  <div class="tab-panel" id="panel-2">
+    <div style="max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Resolución
+        </div>
+        <div class="export-grid">
+          <div class="export-card selected" onclick="selectRes(this)">
+            <div class="res">1920×1080</div>
+            <div class="res-sub">Full HD</div>
+          </div>
+          <div class="export-card" onclick="selectRes(this)">
+            <div class="res">1280×720</div>
+            <div class="res-sub">HD</div>
+          </div>
+          <div class="export-card" onclick="selectRes(this)">
+            <div class="res">1080×1920</div>
+            <div class="res-sub">Vertical / Reels</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Parámetros de exportación
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label>FPS</label>
+            <select>
+              <option>30 fps</option>
+              <option selected>60 fps</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Duración (segundos)</label>
+            <input type="number" value="30" min="5" max="300" placeholder="30">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="padding:14px" onclick="startExport()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Grabar y Exportar MP4
+      </button>
+
+      <div class="progress-wrap" id="progress-wrap" style="display:none">
+        <div class="progress-label">
+          <span id="progress-label-text">Iniciando Playwright...</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+
+      <button class="download-btn" id="download-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar lyric_video.mp4
+      </button>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── TABS ──
+function switchTab(i) {
+  document.querySelectorAll('.tab').forEach((t,idx) => t.classList.toggle('active', idx===i));
+  document.querySelectorAll('.tab-panel').forEach((p,idx) => p.classList.toggle('active', idx===i));
+}
+
+// ── CHIPS ──
+function selectChip(el) {
+  el.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── GENERATE PREVIEW ──
+const lyrics_demo = [
+  "En la oscuridad","te busco","Entre sombras","y luces","Tu voz me guía",
+  "Como norte estrella","Siempre contigo","Siempre sin mella"
+];
+
+function generatePreview() {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'status-dot loading';
+  txt.textContent = 'Groq generando HTML animado...';
+
+  setTimeout(() => {
+    dot.className = 'status-dot ready';
+    txt.textContent = 'HTML generado ✓ — listo para exportar';
+
+    document.getElementById('preview-placeholder').style.display = 'none';
+    const live = document.getElementById('preview-live');
+    live.classList.add('show');
+
+    // Particles
+    const pc = document.getElementById('particles');
+    pc.innerHTML = '';
+    for(let i=0;i<18;i++){
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const s = Math.random()*40+10;
+      p.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*8+4}s;animation-delay:${Math.random()*4}s`;
+      pc.appendChild(p);
+    }
+
+    // Lyrics animation
+    const song = document.getElementById('song-name').value || 'Mi Canción';
+    const artist = document.getElementById('artist-name').value || 'Artista';
+    const input = document.getElementById('lyrics-input').value;
+    const words = input ? input.split(/\s+/).filter(w=>w).slice(0,20) : lyrics_demo;
+    const display = document.getElementById('lyric-display');
+    document.getElementById('preview-artist').textContent = '— ' + artist + ' · ' + song;
+
+    display.innerHTML = '';
+    words.forEach((word, i) => {
+      const span = document.createElement('span');
+      span.className = 'lyric-word';
+      span.style.animationDelay = (i * 0.12) + 's';
+      span.style.opacity = '0';
+      span.textContent = word + ' ';
+      display.appendChild(span);
+      setTimeout(() => { span.style.opacity = ''; }, i * 120);
+    });
+  }, 1800);
+}
+
+// ── ADJUST ──
+function fillPrompt(text) { document.getElementById('adjust-prompt').value = text; }
+function applyAdjust() {
+  const btn = event.target.closest('button');
+  btn.textContent = '⏳ Aplicando...';
+  setTimeout(() => { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Cambio aplicado'; }, 1500);
+}
+
+// ── RESOLUTION SELECT ──
+function selectRes(el) {
+  el.closest('.export-grid').querySelectorAll('.export-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── EXPORT ──
+function startExport() {
+  const wrap = document.getElementById('progress-wrap');
+  const bar = document.getElementById('progress-bar');
+  const lbl = document.getElementById('progress-label-text');
+  const pct = document.getElementById('progress-pct');
+  const dlBtn = document.getElementById('download-btn');
+
+  wrap.style.display = 'block';
+  dlBtn.classList.remove('show');
+
+  const steps = [
+    [10, 'Abriendo HTML en Playwright...'],
+    [25, 'Capturando frames...'],
+    [50, 'Procesando frames (15/30s)...'],
+    [75, 'Ensamblando con ffmpeg...'],
+    [90, 'Codificando H.264...'],
+    [100,'¡MP4 listo!'],
+  ];
+  let i = 0;
+  const iv = setInterval(() => {
+    if(i >= steps.length){ clearInterval(iv); dlBtn.classList.add('show'); return; }
+    bar.style.width = steps[i][0] + '%';
+    lbl.textContent = steps[i][1];
+    pct.textContent = steps[i][0] + '%';
+    i++;
+  }, 700);
+}
+</script>
+</body>
+</html>

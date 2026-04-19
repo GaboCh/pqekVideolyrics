@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pqekVideolyrics — Mockup Visualizer</title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#09090c;
+      --surface:#121218;
+      --surface-2:#171720;
+      --surface-3:#1e1e2a;
+      --border:rgba(255,255,255,.08);
+      --text:#f3f4f7;
+      --muted:#9094a6;
+      --faint:#5d6275;
+      --accent:#7c5cff;
+      --accent-2:#22d3ee;
+      --green:#4ade80;
+      --danger:#ef4444;
+      --radius:14px;
+      --shadow:0 20px 80px rgba(0,0,0,.35);
+    }
+    html,body{min-height:100%;background:radial-gradient(circle at top,#11111a 0%, #09090c 45%, #050507 100%);color:var(--text);font-family:Inter,sans-serif}
+    body{padding:24px}
+    .shell{max-width:1500px;margin:0 auto;border:1px solid var(--border);border-radius:24px;overflow:hidden;background:rgba(10,10,14,.84);backdrop-filter:blur(16px);box-shadow:var(--shadow)}
+    .topbar{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:12px;font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:.02em}
+    .brand-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),#4f46e5);box-shadow:0 0 30px rgba(124,92,255,.35)}
+    .brand small{display:block;font-family:Inter,sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+    .actions{display:flex;gap:10px}
+    .btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.18s ease}
+    .btn:hover{border-color:rgba(124,92,255,.45);transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),#5b3df2);border-color:transparent;box-shadow:0 12px 30px rgba(124,92,255,.25)}
+    .tabs{display:flex;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015)}
+    .tab{padding:10px 16px;border-radius:999px;border:1px solid transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;transition:.18s ease}
+    .tab.active{background:rgba(124,92,255,.12);border-color:rgba(124,92,255,.25);color:#d8d3ff}
+    .panel{display:none;padding:22px}
+    .panel.active{display:block}
+    .grid{display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.012));border:1px solid var(--border);border-radius:18px;padding:18px}
+    .card h3{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:14px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600}
+    textarea,input,select{width:100%;border:1px solid var(--border);background:var(--surface-2);border-radius:12px;color:var(--text);padding:12px 14px;font-size:14px;outline:none;transition:.18s ease}
+    textarea:focus,input:focus,select:focus{border-color:rgba(124,92,255,.4);box-shadow:0 0 0 3px rgba(124,92,255,.12)}
+    textarea{resize:vertical;min-height:220px;line-height:1.5}
+    .field{margin-bottom:14px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{padding:9px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);cursor:pointer;transition:.18s ease}
+    .chip.active{background:rgba(124,92,255,.12);border-color:rgba(124,92,255,.35);color:#ddd8ff}
+    .note{margin-top:14px;padding:13px 14px;border-radius:12px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.18);font-size:12px;line-height:1.55;color:#b4eef7}
+    .main-preview{border:1px solid var(--border);border-radius:20px;overflow:hidden;background:#050507;min-height:720px;position:relative}
+    .preview-bar{height:48px;padding:0 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#0d0d12}
+    .dots{display:flex;gap:8px}.dots span{width:10px;height:10px;border-radius:999px;display:block}.dots .r{background:#fb7185}.dots .y{background:#fbbf24}.dots .g{background:#4ade80}
+    .preview-title{font-size:12px;color:var(--muted);font-weight:600}
+    .preview-stage{position:relative;height:670px;overflow:hidden;background:radial-gradient(circle at center,#11131f 0%,#09090d 55%,#050507 100%)}
+
+    /* MAIN IDEA: CSS visualizer */
+    .visualizer-bg{position:absolute;inset:0;overflow:hidden}
+    .orb{position:absolute;left:50%;top:50%;width:260px;height:260px;margin-left:-130px;margin-top:-130px;border-radius:50%;background:radial-gradient(circle at 35% 35%, rgba(255,255,255,.35), rgba(124,92,255,.20) 18%, rgba(124,92,255,.08) 35%, rgba(34,211,238,.02) 55%, transparent 70%);box-shadow:0 0 80px rgba(124,92,255,.25),0 0 160px rgba(34,211,238,.10);animation:orbPulse 2.5s ease-in-out infinite;filter:blur(.2px)}
+    .ring{position:absolute;left:50%;top:50%;border-radius:50%;border:1px solid rgba(124,92,255,.25);transform:translate(-50%,-50%);animation:ringPulse 3.2s ease-out infinite}
+    .ring.r2{animation-delay:1.1s;border-color:rgba(34,211,238,.22)}
+    .ring.r3{animation-delay:2.1s;border-color:rgba(255,255,255,.14)}
+    .bars{position:absolute;left:0;right:0;bottom:72px;height:180px;display:flex;align-items:flex-end;justify-content:center;gap:8px;padding:0 38px}
+    .bar{width:12px;border-radius:999px 999px 0 0;background:linear-gradient(180deg, rgba(34,211,238,.95), rgba(124,92,255,.85));box-shadow:0 0 18px rgba(124,92,255,.24);transform-origin:bottom center;animation:barBounce var(--d) ease-in-out infinite}
+    .gridlines{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);background-size:100% 60px, 60px 100%;mask-image:linear-gradient(to bottom, transparent, rgba(0,0,0,.9) 20%, rgba(0,0,0,.9) 75%, transparent)}
+    .lyrics-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;z-index:4}
+    .song-kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#a5b4fc;margin-bottom:14px}
+    .lyric-line{font-family:"Space Grotesk",sans-serif;font-size:54px;font-weight:700;line-height:1.05;max-width:820px;text-wrap:balance;text-shadow:0 6px 24px rgba(0,0,0,.35)}
+    .lyric-line .word{display:inline-block;opacity:0;transform:translateY(26px) scale(.96);animation:wordIn .6s cubic-bezier(.16,1,.3,1) forwards}
+    .lyric-sub{margin-top:18px;font-size:15px;color:#b6bdd8}
+    .floats{position:absolute;inset:0;pointer-events:none}
+    .bubble{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.35), rgba(124,92,255,.08) 58%, transparent 70%);filter:blur(2px);opacity:.45;animation:floatUp linear infinite}
+    .callout{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.18);font-size:12px;line-height:1.6;color:#c8f8d8}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .kpi{padding:14px;border-radius:14px;background:var(--surface-2);border:1px solid var(--border)}
+    .kpi span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+    .kpi strong{font-size:18px;font-family:"Space Grotesk",sans-serif}
+
+    @keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+    @keyframes ringPulse{0%{width:220px;height:220px;opacity:0;transform:translate(-50%,-50%) scale(.72)}20%{opacity:.6}100%{width:720px;height:720px;opacity:0;transform:translate(-50%,-50%) scale(1.08)}}
+    @keyframes barBounce{0%,100%{height:18%}20%{height:72%}40%{height:35%}60%{height:88%}80%{height:44%}}
+    @keyframes wordIn{to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes floatUp{0%{transform:translateY(30px) scale(.6);opacity:0}20%{opacity:.45}100%{transform:translateY(-120px) scale(1.18);opacity:0}}
+
+    .mini-preview{margin-top:18px;padding:14px;border-radius:16px;border:1px dashed rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
+    .mini-preview h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+    .mini-visual{height:120px;border-radius:14px;position:relative;overflow:hidden;background:linear-gradient(180deg,#0e1020,#07070b);display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 18px 18px}
+    .mini-bar{width:8px;border-radius:999px 999px 0 0;background:linear-gradient(180deg,#22d3ee,#7c5cff);animation:barBounce var(--d) ease-in-out infinite}
+
+    @media (max-width:1100px){.grid{grid-template-columns:1fr}.preview-stage{height:560px}.lyric-line{font-size:40px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">▶</div>
+        <div>
+          pqekVideolyrics
+          <small>HTML/CSS visualizer → MP4</small>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn">Plantillas</button>
+        <button class="btn primary">Nuevo render</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="0">1. Generar</div>
+      <div class="tab" data-tab="1">2. Ajustar estilo</div>
+      <div class="tab" data-tab="2">3. Exportar MP4</div>
+    </div>
+
+    <div class="panel active" id="panel-0">
+      <div class="grid">
+        <div>
+          <div class="card">
+            <h3>Entrada</h3>
+            <div class="field">
+              <label>Letra</label>
+              <textarea id="lyrics">Nunca pensé que el silencio
+sonaría así de fuerte
+cuando la ciudad se apaga
+y tu nombre sigue enfrente</textarea>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Canción</label>
+                <input id="song" value="Silencio Eléctrico" />
+              </div>
+              <div class="field">
+                <label>Artista</label>
+                <input id="artist" value="Gabo Demo" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <h3>Idea principal</h3>
+            <div class="chips">
+              <div class="chip active">Visualizer CSS</div>
+              <div class="chip">Ondas / barras</div>
+              <div class="chip">Letras encima</div>
+              <div class="chip">Glow + partículas</div>
+              <div class="chip">Luego a MP4</div>
+            </div>
+            <div class="note">
+              Aquí está la cuestión principal: <strong>Groq no genera solo texto bonito</strong>. Genera un <strong>HTML standalone</strong> que trae su propio visualizador con <strong>CSS animations, barras, ondas, círculos pulsantes y capas visuales</strong>. Ese HTML corre en navegador y luego se captura con Playwright/FFmpeg para sacar el MP4.
+            </div>
+            <div class="mini-preview">
+              <h4>Mini ejemplo del gráfico CSS</h4>
+              <div class="mini-visual" id="mini-bars"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <h3>Qué debería generar Groq</h3>
+            <div class="callout">
+              Ejemplo correcto: fondo oscuro + círculo central pulsante + 24 barras animadas con delays distintos + letras sincronizadas encima + partículas CSS flotantes. <br><br>
+              Ejemplo malo: solo un fondo negro con texto entrando y saliendo. Eso no representa la idea del proyecto.
+            </div>
+            <div class="kpis">
+              <div class="kpi"><span>Motor visual</span><strong>HTML + CSS</strong></div>
+              <div class="kpi"><span>Render</span><strong>Browser</strong></div>
+              <div class="kpi"><span>Salida</span><strong>MP4</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main-preview">
+          <div class="preview-bar">
+            <div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+            <div class="preview-title">Mockup del HTML generado — lo que luego se graba a video</div>
+            <button class="btn" id="rerenderBtn" style="padding:8px 12px">Regenerar ejemplo</button>
+          </div>
+          <div class="preview-stage">
+            <div class="visualizer-bg">
+              <div class="gridlines"></div>
+              <div class="orb"></div>
+              <div class="ring r1"></div>
+              <div class="ring r2"></div>
+              <div class="ring r3"></div>
+              <div class="floats" id="floats"></div>
+              <div class="bars" id="bars"></div>
+            </div>
+            <div class="lyrics-overlay">
+              <div class="song-kicker">lyric visualizer / css motion</div>
+              <div class="lyric-line" id="lyricLine"></div>
+              <div class="lyric-sub" id="metaLine"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-1">
+      <div class="card" style="max-width:860px">
+        <h3>Ajustar estilo</h3>
+        <div class="field">
+          <label>Prompt de modificación</label>
+          <textarea style="min-height:160px">Haz que el visualizador tenga más barras, agrega un glow cyan en las ondas y que las letras aparezcan palabra por palabra con efecto cinematic.</textarea>
+        </div>
+        <div class="note">Esta pantalla no cambia la lógica: sigue siendo HTML/CSS/JS renderizable en browser. Solo modifica cómo se ven los gráficos antes de exportar.</div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-2">
+      <div class="card" style="max-width:860px">
+        <h3>Exportar MP4</h3>
+        <div class="row">
+          <div class="field"><label>Resolución</label><select><option>1920x1080</option><option>1280x720</option><option>1080x1920</option></select></div>
+          <div class="field"><label>FPS</label><select><option>30</option><option>60</option></select></div>
+        </div>
+        <div class="field"><label>Duración</label><input value="30 segundos" /></div>
+        <div class="callout">Flujo: abrir HTML generado → esperar animaciones → capturar frames o video en browser → codificar MP4.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function buildBars(target, count, mini=false){
+      const $t = $(target); $t.empty();
+      for(let i=0;i<count;i++){
+        const d = (1.1 + Math.random()*1.6).toFixed(2) + 's';
+        const h = 18 + Math.random()*80;
+        const cls = mini ? 'mini-bar' : 'bar';
+        $('<div/>',{class:cls}).css({'--d':d,height:h+'%'}).appendTo($t);
+      }
+    }
+
+    function buildFloats(){
+      const $f = $('#floats'); $f.empty();
+      for(let i=0;i<22;i++){
+        const s = 18 + Math.random()*80;
+        $('<div/>',{class:'bubble'})
+          .css({
+            width:s+'px',height:s+'px',left:(Math.random()*100)+'%',bottom:(Math.random()*25)+'%',
+            animationDuration:(5+Math.random()*7)+'s',animationDelay:(Math.random()*5)+'s'
+          }).appendTo($f);
+      }
+    }
+
+    function renderLyrics(){
+      const raw = $('#lyrics').val().split(/
+/).filter(Boolean);
+      const line = raw[0] || 'Nunca pensé que el silencio';
+      const words = line.split(/\s+/);
+      const $line = $('#lyricLine');
+      $line.empty();
+      words.forEach((w,i)=>{
+        $('<span/>',{class:'word',text:w+' '}).css('animation-delay',(i*0.12)+'s').appendTo($line);
+      });
+      $('#metaLine').text($('#artist').val() + ' — ' + $('#song').val());
+    }
+
+    function rerender(){
+      buildBars('#bars', 28, false);
+      buildBars('#mini-bars', 20, true);
+      buildFloats();
+      renderLyrics();
+    }
+
+    $(function(){
+      rerender();
+      $('#rerenderBtn').on('click', rerender);
+      $('#lyrics, #song, #artist').on('input', function(){ renderLyrics(); });
+      $('.chip').on('click', function(){ $('.chip').removeClass('active'); $(this).addClass('active'); });
+      $('.tab').on('click', function(){
+        const i = $(this).data('tab');
+        $('.tab').removeClass('active'); $(this).addClass('active');
+        $('.panel').removeClass('active'); $('#panel-'+i).addClass('active');
+      });
+    });
+  </script>
+</body>
+</html>

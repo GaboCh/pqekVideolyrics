@@ -15,7 +15,7 @@ if not exist "%PYTHON%" (
 
 echo.
 echo ============================================================
-echo   GUI - BINANCE TRADING
+echo   pqekVideolyrics - AI Lyric Video Generator
 echo ============================================================
 echo.
 "%PYTHON%" "%ROOT%\main.py"

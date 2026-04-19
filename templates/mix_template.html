@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lyric Video — Mix</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Space Grotesk',sans-serif}
+  canvas{position:fixed;top:0;left:0;z-index:0}
+
+  /* ── Scene transition overlay ── */
+  #scene-cover{
+    position:fixed;inset:0;z-index:50;
+    background:#000;opacity:0;pointer-events:none;
+  }
+
+  /* ── STYLE A: Neon (verse) ── */
+  .s-neon{font-family:'Space Grotesk',sans-serif;font-size:clamp(2rem,5.5vw,5.5rem);font-weight:700;letter-spacing:0.06em;
+    color:#fff;text-align:center;padding:0 40px;
+    text-shadow:0 0 14px #00ffff, 0 0 36px rgba(0,200,255,0.6),0 0 8px #ff00cc,0 0 22px rgba(255,0,200,0.5);}
+  /* ── STYLE B: Galaxy (chorus) ── */
+  .s-galaxy{font-family:'Space Grotesk',sans-serif;font-size:clamp(2rem,5.5vw,5.5rem);font-weight:700;letter-spacing:0.05em;
+    color:#fff;text-align:center;padding:0 40px;
+    text-shadow:0 0 18px rgba(190,140,255,0.95),0 0 50px rgba(140,100,255,0.6);}
+  /* ── STYLE C: Grunge (bridge) ── */
+  .s-grunge{font-family:'Bebas Neue',cursive;font-size:clamp(3rem,9vw,9rem);
+    color:#fff;text-align:center;line-height:0.95;letter-spacing:0.04em;
+    text-shadow:3px 3px 0 #000,-2px -2px 0 #000,0 0 20px rgba(255,255,255,0.2);}
+
+  /* common lyric wrapper */
+  .lyric-line{
+    position:absolute;opacity:0;filter:blur(12px);
+    width:100%;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;
+    top:50%;transform:translateY(-50%);
+  }
+
+  #overlay{position:fixed;inset:0;z-index:10;pointer-events:none;}
+
+  /* bg accent color overlays */
+  #bg-tint{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:transparent;
+    transition:background 1.2s ease;
+  }
+
+  /* title */
+  #song-title{position:fixed;top:50%;left:50%;transform:translate(-50%,-55%);
+    z-index:20;text-align:center;font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,7vw,7rem);
+    font-weight:700;color:#fff;letter-spacing:0.04em;opacity:0;width:90%;
+    text-shadow:0 0 30px rgba(180,140,255,0.8);}
+  #artist-title{position:fixed;top:calc(50% + clamp(2.5rem,5vw,5rem));left:50%;
+    transform:translateX(-50%);z-index:20;text-align:center;
+    color:rgba(200,180,255,0.7);font-size:clamp(0.9rem,1.6vw,1.4rem);letter-spacing:0.22em;text-transform:uppercase;opacity:0;}
+
+  /* section label badge */
+  #section-badge{
+    position:fixed;top:28px;right:32px;z-index:15;
+    font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;
+    color:rgba(255,255,255,0.35);opacity:0;pointer-events:none;
+    transition:opacity 0.4s;
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="bg-tint"></div>
+<div id="scene-cover"></div>
+<div id="overlay"></div>
+<div id="song-title">{{SONG_NAME}}</div>
+<div id="artist-title">{{ARTIST_NAME}}</div>
+<div id="section-badge"></div>
+
+<script>
+/* ── ALL LYRICS SECTIONS ─────────────────────────────────
+   Mark section type with prefix:
+   "NEON:" → neon style
+   "GALAXY:" → galaxy style
+   "GRUNGE:" → grunge style
+   "" (empty) → pause between sections
+─────────────────────────────────────────────────────── */
+const SECTIONS = [{{LYRICS_JSON}}];
+
+/* ── THREE.JS SCENE ───────────────────────────────────── */
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('bg'),antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000000);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,300);
+camera.position.z=18;
+
+const disc=(()=>{
+  const c=document.createElement('canvas');c.width=64;c.height=64;
+  const cx=c.getContext('2d');
+  const g=cx.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');
+  cx.fillStyle=g;cx.beginPath();cx.arc(32,32,32,0,Math.PI*2);cx.fill();
+  return new THREE.CanvasTexture(c);
+})();
+
+const COUNT=9000;
+const geo=new THREE.BufferGeometry();
+const pos=new Float32Array(COUNT*3);
+const col=new Float32Array(COUNT*3);
+const clr=new THREE.Color();
+// Default: purple nebula
+for(let i=0;i<COUNT;i++){
+  const arm=Math.floor(Math.random()*3);
+  const r=2+Math.pow(Math.random(),0.5)*70;
+  const spin=r*0.25;
+  const armA=(arm/3)*Math.PI*2;
+  const theta=armA+spin+(Math.random()-0.5)*0.6;
+  const y=(Math.random()-0.5)*6*(1-(r/70));
+  pos[i*3]=r*Math.cos(theta);pos[i*3+1]=y;pos[i*3+2]=r*Math.sin(theta);
+  clr.setHSL(0.67+Math.random()*0.18,0.8,0.55+Math.random()*0.35);
+  col[i*3]=clr.r;col[i*3+1]=clr.g;col[i*3+2]=clr.b;
+}
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+const mat=new THREE.PointsMaterial({size:0.42,map:disc,alphaTest:0.001,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,transparent:true});
+const galaxy=new THREE.Points(geo,mat);
+scene.add(galaxy);
+
+// Pulsing ring
+const ring=new THREE.Mesh(new THREE.RingGeometry(4,4.18,120),new THREE.MeshBasicMaterial({color:0xaa88ff,transparent:true,opacity:0.2,side:THREE.DoubleSide}));
+ring.rotation.x=-0.3;scene.add(ring);
+gsap.to(ring.scale,{x:1.08,y:1.08,duration:2.5,yoyo:true,repeat:-1,ease:'sine.inOut'});
+
+window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
+let t=0;
+function animate(){requestAnimationFrame(animate);t+=0.001;galaxy.rotation.y+=0.0006;camera.position.y=Math.sin(t*0.5)*0.5+2;renderer.render(scene,camera);}
+animate();
+
+/* ── SCENE COLOR SWITCHER ─────────────────────────────── */
+const bgTint = document.getElementById('bg-tint');
+const sceneThemes = {
+  NEON:   { tint:'rgba(0,20,40,0.35)',  hue:[0.5, 0.85] },
+  GALAXY: { tint:'rgba(5,0,20,0.25)',   hue:[0.65,0.18] },
+  GRUNGE: { tint:'rgba(80,0,0,0.45)',   hue:[0.0, 0.08] },
+};
+let currentTheme = 'GALAXY';
+function switchTheme(name){
+  if(currentTheme===name) return;
+  currentTheme=name;
+  const th=sceneThemes[name]||sceneThemes.GALAXY;
+  bgTint.style.background=th.tint;
+  // re-color particles
+  const [h0,range]=th.hue;
+  for(let i=0;i<COUNT;i++){
+    clr.setHSL(h0+Math.random()*range,0.9,0.55+Math.random()*0.35);
+    col[i*3]=clr.r;col[i*3+1]=clr.g;col[i*3+2]=clr.b;
+  }
+  geo.getAttribute('color').needsUpdate=true;
+}
+
+/* ── LYRIC ENGINE ─────────────────────────────────────── */
+const overlay=document.getElementById('overlay');
+const badge=document.getElementById('section-badge');
+const THEME_LABELS={NEON:'Verso',GALAXY:'Coro',GRUNGE:'Puente'};
+
+function showBadge(theme){
+  badge.textContent=THEME_LABELS[theme]||'';
+  gsap.fromTo(badge,{opacity:0},{opacity:1,duration:0.4});
+  gsap.to(badge,{opacity:0,duration:0.4,delay:2});
+}
+
+// Cover flash between theme changes
+function themeTransition(newTheme, cb){
+  if(currentTheme===newTheme){cb();return;}
+  const cover=document.getElementById('scene-cover');
+  gsap.to(cover,{opacity:1,duration:0.3,ease:'power2.in',onComplete:()=>{
+    switchTheme(newTheme);
+    showBadge(newTheme);
+    gsap.to(cover,{opacity:0,duration:0.5,delay:0.05,ease:'power2.out',onComplete:cb});
+  }});
+}
+
+function makeEl(text,theme){
+  const el=document.createElement('div');
+  el.className='lyric-line';
+  const span=document.createElement('span');
+  span.className = theme==='GRUNGE'?'s-grunge':theme==='NEON'?'s-neon':'s-galaxy';
+  span.textContent=text;
+  el.appendChild(span);
+  overlay.appendChild(el);
+  return el;
+}
+
+function showLine(text, theme, onComplete){
+  if(!text||!text.trim()){setTimeout(onComplete,700);return;}
+  const el=makeEl(text,theme);
+  gsap.fromTo(el,
+    {opacity:0,y:theme==='GRUNGE'?20:40,filter:'blur(16px)'},
+    {opacity:1,y:0,filter:'blur(0px)',duration:theme==='GRUNGE'?0.22:0.65,ease:'power2.out',
+      onComplete:()=>{
+        const hold=theme==='GRUNGE'?1600:2300;
+        setTimeout(()=>{
+          gsap.to(el,{opacity:0,y:theme==='GRUNGE'?-15:-28,filter:'blur(8px)',duration:0.4,ease:'power2.in',
+            onComplete:()=>{el.remove();onComplete();}
+          });
+        },hold);
+      }
+    }
+  );
+}
+
+// Parse sections: each item is "THEME:text" or ""
+function parseLine(raw){
+  const m=raw.match(/^(NEON|GALAXY|GRUNGE):(.*)$/);
+  if(m) return {theme:m[1],text:m[2].trim()};
+  return {theme:null,text:raw};
+}
+
+let idx=0;
+let activeTheme='GALAXY';
+
+function next(){
+  if(idx>=SECTIONS.length) return;
+  const {theme,text}=parseLine(SECTIONS[idx]);
+  idx++;
+  if(!text.trim()){next();return;}
+  const t2=theme||activeTheme;
+  if(t2!==activeTheme){
+    themeTransition(t2,()=>{activeTheme=t2;showLine(text,t2,next);});
+  } else {
+    showLine(text,t2,next);
+  }
+}
+
+// Intro
+const sEl=document.getElementById('song-title');
+const aEl=document.getElementById('artist-title');
+gsap.fromTo(sEl,{opacity:0,y:30,filter:'blur(20px)'},{opacity:1,y:0,filter:'blur(0px)',duration:1.1,ease:'power3.out',
+  onComplete:()=>{
+    gsap.fromTo(aEl,{opacity:0},{opacity:1,duration:0.6});
+    setTimeout(()=>{
+      gsap.to([sEl,aEl],{opacity:0,duration:0.5,onComplete:next});
+    },2800);
+  }
+});
+</script>
+</body>
+</html>

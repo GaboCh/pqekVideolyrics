@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lyric Video — Zoom Punch</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0a;font-family:'Anton',sans-serif;}
+
+  /* ── Vignette ── */
+  body::after{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:radial-gradient(ellipse 80% 70% at 50% 50%, transparent 40%, rgba(0,0,0,0.75) 100%);
+  }
+
+  /* ── BG color that changes per line ── */
+  #bg{
+    position:fixed;inset:0;z-index:0;
+    background:#0a0a0a;
+    transition:background 0.15s;
+  }
+
+  /* ── single stripe accent ── */
+  #stripe{
+    position:fixed;
+    left:0;right:0;
+    height:0;
+    top:50%;transform:translateY(-50%);
+    z-index:2;
+    background:#fff;
+    opacity:0;
+  }
+
+  /* ── Lyric display ── */
+  #lyric{
+    position:fixed;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%) scale(1);
+    z-index:10;
+    width:90vw;
+    text-align:center;
+    font-family:'Bebas Neue',cursive;
+    font-size:clamp(4rem,15vw,14rem);
+    line-height:0.88;
+    color:#fff;
+    letter-spacing:0.02em;
+    opacity:0;
+    will-change:transform,opacity;
+  }
+
+  /* title */
+  #info{
+    position:fixed;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;z-index:20;
+    font-family:'Anton',sans-serif;
+    font-size:clamp(3rem,9vw,9rem);
+    line-height:1;
+    color:#fff;
+    opacity:0;
+    letter-spacing:0.04em;
+    width:90vw;
+  }
+  #artist{
+    position:fixed;
+    bottom:clamp(16px,3vw,40px);
+    left:50%;transform:translateX(-50%);
+    z-index:20;
+    font-family:'Bebas Neue',cursive;
+    font-size:clamp(1rem,3vw,2.5rem);
+    color:rgba(255,255,255,0.45);
+    letter-spacing:0.3em;
+    opacity:0;text-transform:uppercase;
+  }
+
+  /* beat flash */
+  #flash{position:fixed;inset:0;z-index:5;background:#fff;opacity:0;pointer-events:none;}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="stripe"></div>
+<div id="flash"></div>
+<div id="lyric"></div>
+<div id="info">{{SONG_NAME}}</div>
+<div id="artist">{{ARTIST_NAME}}</div>
+
+<script>
+const LYRICS = [{{LYRICS_JSON}}];
+
+const lyricEl  = document.getElementById('lyric');
+const bgEl     = document.getElementById('bg');
+const stripeEl = document.getElementById('stripe');
+const flashEl  = document.getElementById('flash');
+
+// Palette of bg colors per line
+const PALETTES = [
+  {bg:'#0d0d0d', accent:'#ff3c3c'},
+  {bg:'#0a0a1a', accent:'#4488ff'},
+  {bg:'#0d0a00', accent:'#ffaa00'},
+  {bg:'#0a000d', accent:'#cc44ff'},
+  {bg:'#000d0a', accent:'#00ffaa'},
+  {bg:'#1a0000', accent:'#ff2200'},
+  {bg:'#00001a', accent:'#00aaff'},
+];
+let palIdx = 0;
+
+function flash(){
+  gsap.fromTo(flashEl, {opacity:0.35},{opacity:0, duration:0.18, ease:'power2.out'});
+}
+
+function showLine(text, onDone){
+  if(!text || !text.trim()){setTimeout(onDone, 500); return;}
+
+  const pal = PALETTES[palIdx % PALETTES.length];
+  palIdx++;
+  bgEl.style.background = pal.bg;
+  lyricEl.style.color = '#fff';
+  lyricEl.style.textShadow = `0 0 40px ${pal.accent}, 4px 4px 0 rgba(0,0,0,0.8)`;
+  lyricEl.textContent = text;
+
+  flash();
+
+  // Stripe flash
+  gsap.fromTo(stripeEl,
+    {height:0, opacity:0.4},
+    {height:'6px', opacity:0, duration:0.25, ease:'power3.out'}
+  );
+
+  // Zoom-punch: scale from 1.8→1.0 fast, hold, then zoom-out to 0.6 and fade
+  const holdMs = Math.max(900, text.length * 55);
+
+  gsap.timeline()
+    .fromTo(lyricEl,
+      {opacity:0, scale:2.4, filter:'blur(8px)'},
+      {opacity:1, scale:1,   filter:'blur(0px)', duration:0.2, ease:'power3.out'}
+    )
+    .to(lyricEl,
+      {scale:0.82, opacity:0, filter:'blur(4px)', duration:0.22, ease:'power3.in', delay: holdMs/1000},
+      '+=0'
+    )
+    .call(onDone);
+}
+
+let idx = 0;
+function next(){
+  if(idx >= LYRICS.length) return;
+  showLine(LYRICS[idx++], next);
+}
+
+// Intro
+const infoEl = document.getElementById('info');
+const artEl  = document.getElementById('artist');
+gsap.fromTo(infoEl,
+  {opacity:0, scale:3, filter:'blur(12px)'},
+  {opacity:1, scale:1, filter:'blur(0px)', duration:0.45, ease:'power3.out',
+    onComplete:()=>{
+      gsap.fromTo(artEl,{opacity:0},{opacity:1,duration:0.4});
+      flash();
+      setTimeout(()=>{
+        gsap.to([infoEl,artEl],{opacity:0,scale:0.5,duration:0.25,ease:'power3.in',
+          onComplete: next
+        });
+      }, 2500);
+    }
+  }
+);
+</script>
+</body>
+</html>

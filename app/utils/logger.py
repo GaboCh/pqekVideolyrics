@@ -11,3 +11,5 @@ def setup_logger(name: str) -> logging.Logger:
         handler.setFormatter(logging.Formatter(_FMT))
         logger.addHandler(handler)
     return logger
+
+logger = setup_logger("pqekVideolyrics")
