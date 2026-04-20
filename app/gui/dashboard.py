@@ -336,10 +336,81 @@ class Dashboard:
 
                     export_btn.click(fn=export_vid, inputs=[platform, quality, audio_upload], outputs=[output_video])
 
+                # --- TAB 4: SINCRONIZAR ---
+                with gr.Tab("4. Sincronizar"):
+                    gr.Markdown("### ⏱️ Herramienta de Sincronización en Vivo")
+                    gr.Markdown("Paso 1: Sube el audio y el SRT en la **Pestaña 1**.\nPaso 2. Pulsa el botón de abajo para empezar a ajustar.")
+                    
+                    prep_btn = gr.Button("🔗 PREPARAR SINCRONIZADOR CON DATOS DE PESTAÑA 1", variant="primary")
+                    
+                    sync_container = gr.HTML(value="<div style='height:400px; display:flex; align-items:center; justify-content:center; background:#141416; border-radius:12px; color:#555;'>Carga el audio en la Pestaña 1 y pulsa el botón de arriba.</div>")
+                    
+                    def sync_bridge(srt_f, lyr_txt, audio_f):
+                        try:
+                            import base64
+                            import os
+                            
+                            # 1. Leer Letra o SRT
+                            final_text = lyr_txt
+                            if srt_f:
+                                with open(srt_f.name, "r", encoding="utf-8") as f:
+                                    final_text = f.read()
+                            
+                            if not final_text:
+                                return "<div style='color:orange; padding:20px;'>⚠️ No hay letra ni SRT en la Pestaña 1.</div>"
+                            if not audio_f:
+                                return "<div style='color:orange; padding:20px;'>⚠️ No hay audio cargado en la Pestaña 1.</div>"
+
+                            # 2. Cargar HTML de la herramienta
+                            with open("templates/sync_tool_gui.html", "r", encoding="utf-8") as f:
+                                base_html = f.read()
+                            
+                            # 3. Convertir Audio a Base64 (Solución Definitiva para que suene)
+                            with open(audio_f, "rb") as a_file:
+                                audio_b64 = base64.b64encode(a_file.read()).decode('utf-8')
+                            audio_url = f"data:audio/mpeg;base64,{audio_b64}"
+                            
+                            # Escapar texto para JS
+                            safe_text = final_text.replace("`", "\\`").replace("$", "\\$")
+                            
+                            # 4. Inyectar script de auto-carga
+                            injection = f"""
+                            <script>
+                                setTimeout(() => {{
+                                    if(window.loadFromParent) {{
+                                        window.loadFromParent('{audio_url}', `{safe_text}`);
+                                        // No hacemos click automático para no asustar
+                                    }}
+                                }}, 500);
+                            </script>
+                            """
+                            full_html = base_html + injection
+                            
+                            # Escapar para iframe srcdoc
+                            safe_html = full_html.replace('"', '&quot;')
+                            return f'<iframe srcdoc="{safe_html}" style="width:100%; height:800px; border:none; border-radius:12px; background:#0d0d0f;" allow="autoplay"></iframe>'
+                        
+                        except Exception as e:
+                            logger.error(f"Error en sync_bridge: {e}")
+                            return f"<p style='color:red;'>Error al conectar: {e}. Intenta subir un archivo de audio más pequeño o formato mp3.</p>"
+
+                    # Conectamos el botón con los inputs de la Pestaña 1
+                    prep_btn.click(
+                        fn=sync_bridge,
+                        inputs=[srt_upload, lyrics, audio_upload],
+                        outputs=[sync_container]
+                    )
+
         return demo
 
 def launch_dashboard():
     dashboard = Dashboard()
     ui = dashboard.create_ui()
-    # Pass CSS to launch method and open in browser to avoid silent startup
-    ui.queue().launch(server_name="127.0.0.1", server_port=7860, inbrowser=True, css=dashboard.custom_css)
+    
+    # Pass CSS to launch method and open in browser
+    ui.queue().launch(
+        server_name="127.0.0.1", 
+        server_port=7860, 
+        inbrowser=True, 
+        css=dashboard.custom_css
+    )

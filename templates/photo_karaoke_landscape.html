@@ -310,55 +310,6 @@ body::after{
 }
 #btn-restart:active{transform:scale(0.92);background:var(--accent-40)}
 
-/* ── SYNC PANEL ── */
-#sync-panel {
-  position: fixed; top: 20px; right: 20px; z-index: 1000;
-  width: 240px; padding: 15px; border-radius: 12px;
-  background: rgba(13, 16, 24, 0.85); backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  display: flex; flex-direction: column; gap: 12px;
-  transform: translateX(280px); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#sync-panel.open { transform: translateX(0); }
-#sync-toggle-btn {
-  position: fixed; top: 20px; right: 20px; z-index: 1001;
-  background: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.15);
-  border: 1px solid var(--accent-40); color: var(--accent);
-  padding: 6px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 600;
-  cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em;
-  transition: all 0.3s ease;
-}
-#sync-toggle-btn:hover { background: var(--accent-40); color: #fff; }
-#sync-toggle-btn.active { right: 270px; }
-
-#sync-now-btn {
-  background: var(--accent); color: #000; border: none;
-  padding: 18px; border-radius: 10px; font-weight: 800; font-size: 1.1rem;
-  cursor: pointer; transition: transform 0.1s, background 0.3s;
-  box-shadow: 0 0 20px var(--accent-40);
-  text-transform: uppercase; letter-spacing: 0.1em;
-}
-#sync-now-btn:active { transform: scale(0.94); background: #fff; }
-
-.sync-nudge-row { display: flex; gap: 6px; }
-.sync-nudge-btn {
-  flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-  color: #fff; padding: 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
-}
-.sync-nudge-btn:hover { background: rgba(255,255,255,0.12); }
-
-#sync-current-label { font-size: 0.6rem; color: var(--muted-hi); text-transform: uppercase; }
-#sync-current-text { 
-  font-size: 0.85rem; color: #fff; font-weight: 500; 
-  height: 44px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-}
-
-#sync-copy-btn {
-  background: transparent; border: 1px dashed var(--accent-40); color: var(--accent);
-  padding: 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; margin-top: 5px;
-}
-#sync-copy-btn:hover { border-style: solid; background: var(--accent-20); }
 #btn-restart svg{ pointer-events:none; }
 </style>
 </head>
@@ -406,17 +357,6 @@ body::after{
         </button>
       </div>
     </div>
-  <button id="sync-toggle-btn">Sincronizar</button>
-  <div id="sync-panel">
-    <div id="sync-current-label">Frase Actual:</div>
-    <div id="sync-current-text">--</div>
-    <button id="sync-now-btn">¡AHORA!</button>
-    <div class="sync-nudge-row">
-      <button class="sync-nudge-btn" id="sync-nudge-back">-0.1s</button>
-      <button class="sync-nudge-btn" id="sync-nudge-next">+0.1s</button>
-    </div>
-    <button id="sync-copy-btn">Copiar SRT Corregido</button>
-  </div>
 </div>
 
 
@@ -704,91 +644,6 @@ window.seekTo = function(ms){
 
   let points   = null;
   let currentVisualType = 'galaxy';
-
-  /* ── LÓGICA DE SINCRONIZACIÓN EN VIVO ── */
-  let isSyncMode = false;
-  const syncBtn = document.getElementById('sync-toggle-btn');
-  const syncPanel = document.getElementById('sync-panel');
-  const syncNow = document.getElementById('sync-now-btn');
-  const syncCurrent = document.getElementById('sync-current-text');
-
-  syncBtn.addEventListener('click', () => {
-    isSyncMode = !isSyncMode;
-    syncPanel.classList.toggle('open', isSyncMode);
-    syncBtn.classList.toggle('active', isSyncMode);
-    syncBtn.innerText = isSyncMode ? "Cerrar Ajuste" : "Sincronizar";
-    updateSyncUI();
-  });
-
-  function updateSyncUI() {
-    if(!isSyncMode) return;
-    const line = LYRICS[currentIdx];
-    syncCurrent.innerText = line ? line.text : "Fin de la letra";
-  }
-
-  function markCurrentTime() {
-    if(!isSyncMode || !LYRICS[currentIdx]) return;
-    const timeMs = Math.round(audioEl.currentTime * 1000);
-    LYRICS[currentIdx].startMs = timeMs;
-    
-    // Si la línea anterior no tiene endMs, se lo ponemos ahora
-    if(currentIdx > 0 && !LYRICS[currentIdx-1].endMs) {
-      LYRICS[currentIdx-1].endMs = timeMs;
-    }
-
-    currentIdx++;
-    updateLines();
-    updateSyncUI();
-    
-    // Pequeño flash visual en el botón
-    syncNow.style.background = "#fff";
-    setTimeout(() => { syncNow.style.background = "var(--accent)"; }, 100);
-  }
-
-  syncNow.addEventListener('click', markCurrentTime);
-  window.addEventListener('keydown', (e) => {
-    if(isSyncMode && e.code === 'Space') {
-      e.preventDefault();
-      markCurrentTime();
-    }
-  });
-
-  document.getElementById('sync-nudge-back').addEventListener('click', () => {
-    const idx = Math.max(0, currentIdx - 1);
-    if(LYRICS[idx]) {
-       LYRICS[idx].startMs = Math.max(0, (LYRICS[idx].startMs || 0) - 100);
-       updateLines();
-    }
-  });
-
-  document.getElementById('sync-nudge-next').addEventListener('click', () => {
-    const idx = Math.max(0, currentIdx - 1);
-    if(LYRICS[idx]) {
-       LYRICS[idx].startMs = (LYRICS[idx].startMs || 0) + 100;
-       updateLines();
-    }
-  });
-
-  document.getElementById('sync-copy-btn').addEventListener('click', () => {
-    let srt = "";
-    LYRICS.forEach((line, i) => {
-      const start = formatSRTTime(line.startMs || 0);
-      const end = formatSRTTime(line.endMs || (line.startMs || 0) + 2000);
-      srt += `${i+1}\n${start} --> ${end}\n${line.text}\n\n`;
-    });
-    navigator.clipboard.writeText(srt);
-    const oldTxt = document.getElementById('sync-copy-btn').innerText;
-    document.getElementById('sync-copy-btn').innerText = "¡COPIADO!";
-    setTimeout(() => { document.getElementById('sync-copy-btn').innerText = oldTxt; }, 2000);
-  });
-
-  function formatSRTTime(ms) {
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    const mm = Math.floor(ms % 1000);
-    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')},${mm.toString().padStart(3,'0')}`;
-  }
 
   function rebuildVisualizer(ar, ag, ab){
     if(points){ points.geometry.dispose(); points.material.dispose(); scene.remove(points); }

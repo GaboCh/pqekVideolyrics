@@ -2,203 +2,238 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sincronizador pqek</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Sincro-Estudio Pro-Fácil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #0d0d0f;
             --accent: #7c6af7;
-            --accent-glow: rgba(124, 106, 247, 0.3);
-            --card: #141416;
-            --text: #e8e8ed;
-            --text-dim: #a1a1aa;
+            --success: #10b981;
+            --card: #1a1a1e;
+            --text: #ffffff;
+            --text-dim: #888;
         }
         body {
             background: var(--bg); color: var(--text);
             font-family: 'Inter', sans-serif; margin: 0; padding: 20px;
             display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden;
+            overflow: hidden; height: 95vh;
         }
-        .container { max-width: 800px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-        h2 { font-weight: 800; text-align: center; margin: 0; color: var(--accent); }
+        .container { max-width: 1100px; width: 100%; height: 100%; display: grid; grid-template-columns: 1fr 400px; gap: 30px; }
         
-        .setup-area {
-            background: var(--card); border: 1px solid rgba(255,255,255,0.08);
-            padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px;
+        /* GUI PRINCIPAL */
+        .lyrics-column {
+            background: var(--card); border-radius: 24px; border: 2px solid #333;
+            overflow-y: auto; display: flex; flex-direction: column; padding: 20px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
         }
-        textarea {
-            background: #000; border: 1px solid #333; color: #fff;
-            padding: 12px; border-radius: 8px; resize: vertical; min-height: 100px;
-            font-family: inherit; font-size: 0.9rem;
+        .line {
+            padding: 20px; border-radius: 15px; margin-bottom: 10px;
+            font-size: 1.1rem; color: #555; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent; display: flex; justify-content: space-between;
         }
-        .btn-start {
-            background: var(--accent); color: #fff; border: none; padding: 12px;
-            border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
+        .line.active {
+            background: rgba(124, 106, 247, 0.2); color: #fff; font-weight: 900;
+            border: 1px solid var(--accent); transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(124,106,247,0.2);
         }
-        .btn-start:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .line.done { color: var(--success); opacity: 0.8; font-weight: 500; }
+        .line-time { font-family: monospace; font-size: 0.8rem; background: #000; padding: 2px 8px; border-radius: 4px; }
 
-        .sync-area { display: none; flex-direction: column; gap: 20px; }
-        .sync-area.active { display: flex; }
-
-        #audio-player { width: 100%; filter: invert(1); margin-bottom: 10px; }
-
-        .marking-zone {
-            display: grid; grid-template-columns: 1fr 200px; gap: 20px;
-        }
-
-        .lyrics-list {
-            background: var(--card); border-radius: 12px; padding: 10px;
-            max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .lyric-line {
-            padding: 10px 15px; border-radius: 8px; margin-bottom: 5px;
-            color: var(--text-dim); transition: 0.2s; font-size: 1rem;
-        }
-        .lyric-line.active {
-            background: var(--accent-glow); color: #fff; font-weight: 600; 
-            border-left: 4px solid var(--accent);
-        }
-        .lyric-line.done { color: var(--accent); opacity: 0.6; }
-
-        .controls {
-            display: flex; flex-direction: column; gap: 15px;
-        }
-        #btn-tap {
-            background: var(--accent); color: #fff; border: none;
-            width: 100%; height: 160px; border-radius: 16px;
-            font-size: 1.5rem; font-weight: 800; cursor: pointer;
-            box-shadow: 0 10px 30px var(--accent-glow);
-            transition: transform 0.1s; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; gap: 10px;
-        }
-        #btn-tap:active { transform: scale(0.95); background: #fff; color: #000; }
-        #btn-tap span { font-size: 0.8rem; font-weight: 400; opacity: 0.8; }
-
-        .output-area {
-            background: #000; padding: 15px; border-radius: 12px;
-            border: 1px dashed var(--accent); margin-top: 20px; display: none;
-        }
-        .output-area.active { display: block; }
-        pre { white-space: pre-wrap; font-size: 0.8rem; height: 150px; overflow-y: auto; margin: 0; }
+        /* PANEL DE CONTROL "ABUELO" */
+        .controls-column { display: flex; flex-direction: column; gap: 20px; }
         
-        .btn-copy {
-            background: #fff; color: #000; border: none; padding: 10px;
-            width: 100%; border-radius: 8px; font-weight: 600; margin-top: 10px; cursor: pointer;
+        .step-card {
+            background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #333;
+            display: flex; align-items: center; gap: 15px;
         }
+        .step-num {
+            background: var(--accent); width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem;
+        }
+        .step-text { font-weight: 800; font-size: 0.9rem; }
+
+        /* BOTONES MAESTROS */
+        #btn-play-master {
+            background: #fff; color: #000; border: none; padding: 25px;
+            border-radius: 20px; font-size: 1.5rem; font-weight: 900; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            transition: all 0.2s; box-shadow: 0 10px 40px rgba(255,255,255,0.1);
+        }
+        #btn-play-master:hover { transform: scale(1.02); }
+        #btn-play-master.playing { background: #ff4757; color: #fff; }
+
+        #btn-tap-master {
+            flex: 1; background: var(--accent); color: #fff; border: none;
+            border-radius: 30px; font-size: 2.2rem; font-weight: 900; cursor: pointer;
+            box-shadow: 0 20px 60px rgba(124,106,247,0.4);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.1s; border: 4px solid rgba(255,255,255,0.1);
+        }
+        #btn-tap-master:active { transform: scale(0.9); background: #fff; color: #000; box-shadow: 0 0 80px #fff; }
+        #btn-tap-master .sub { font-size: 1rem; font-weight: 400; opacity: 0.7; margin-top: 10px; }
+
+        .btn-footer {
+            background: #222; color: #fff; border: none; padding: 15px;
+            border-radius: 12px; cursor: pointer; font-weight: 700; transition: 0.2s;
+        }
+        .btn-footer:hover { background: #333; }
+        
+        #audio-player { display: none; } /* Oculto, manejado por el botón maestro */
+
+        /* RESULTADO */
+        #result-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px);
+            display: none; align-items: center; justify-content: center; z-index: 9999;
+        }
+        #result-overlay.active { display: flex; }
+        .result-box {
+            background: #111; border: 2px solid var(--success); padding: 40px; border-radius: 30px;
+            max-width: 500px; width: 90%; text-align: center;
+        }
+        pre { background: #000; padding: 20px; border-radius: 15px; color: var(--success); height: 150px; overflow-y: auto; text-align: left; border: 1px solid #222; }
+
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Sincronización Fácil</h2>
-
-    <div class="setup-area" id="setup">
-        <div style="font-size: 0.9rem; color: var(--text-dim)">
-            1. Pega la letra de tu canción abajo.<br>
-            2. Selecciona el archivo de audio.<br>
-            3. Presiona "Empezar" para comenzar a marcar.
+<div class="container" id="main-gui" style="display:none;">
+    <div class="lyrics-column" id="lyric-list"></div>
+    
+    <div class="controls-column">
+        <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-text">DALE AL PLAY PARA ESCUCHAR</div>
         </div>
-        <textarea id="raw-lyrics" placeholder="Pega aquí la letra línea por línea..."></textarea>
-        <input type="file" id="audio-file" accept="audio/*" style="color: var(--text-dim)">
-        <button class="btn-start" id="btn-begin">EMPEZAR A SINCRONIZAR</button>
-    </div>
-
-    <div class="sync-area" id="sync">
-        <audio id="audio-player" controls></audio>
         
-        <div class="marking-zone">
-            <div class="lyrics-list" id="lyric-list"></div>
-            <div class="controls">
-                <button id="btn-tap">
-                    ¡MARCAR!
-                    <span>O presiona ESPACIO</span>
-                </button>
-                <button class="btn-start" style="background: #333;" onclick="window.location.reload()">REINICIAR</button>
-                <div style="font-size: 0.7rem; color: var(--text-dim); text-align: center;">
-                    Presiona el botón justo cuando empiece la frase.
-                </div>
-            </div>
+        <button id="btn-play-master">
+            <span id="play-icon">▶</span> <span id="play-text">REPRODUCIR MÚSICA</span>
+        </button>
+
+        <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-text">PULSA EL BOTÓN CUANDO OIGAS LA VOZ</div>
         </div>
 
-        <div class="output-area" id="output">
-            <div style="margin-bottom: 10px; font-weight: 600;">Letra Sincronizada (SRT):</div>
-            <pre id="srt-text"></pre>
-            <button class="btn-copy" id="btn-copy">COPIAR AL PORTAPAPELES</button>
-        </div>
+        <button id="btn-tap-master">
+            ¡MARCAR!
+            <div class="sub">Púlsame o usa ESPACIO</div>
+        </button>
+
+        <div style="flex: 0.2;"></div>
+
+        <button class="btn-footer" style="background:var(--success); color:#000; font-size: 1.1rem;" onclick="generateSRT()">✅ TERMINAR Y COPIAR SRT</button>
+        <button class="btn-footer" onclick="window.location.reload()" style="font-size: 0.8rem; color: #666;">Reiniciar todo</button>
     </div>
 </div>
+
+<!-- PANTALLA CARGA -->
+<div id="loading-screen" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+    <div style="font-size: 1.5rem; font-weight: 900; color:var(--accent);">ESPERANDO DATOS...</div>
+    <div style="color:#555; text-align:center;">Sube tu audio y letra en la Pestaña 1<br>y pulsa "PREPARAR SINCRONIZADOR"</div>
+</div>
+
+<div id="result-overlay">
+    <div class="result-box">
+        <h2 style="color:var(--success); margin-bottom:10px;">¡LISTO!</h2>
+        <p>Copia estos tiempos y pégalos en la Pestaña 1.</p>
+        <pre id="srt-text"></pre>
+        <button id="btn-copy-all" class="btn-footer" style="background:#fff; color:#000; width:100%; margin-top:20px; font-size:1.2rem;">📋 COPIAR TODO</button>
+        <button class="btn-footer" style="background:transparent; color:#555; margin-top:10px;" onclick="document.getElementById('result-overlay').classList.remove('active')">Cerrar</button>
+    </div>
+</div>
+
+<audio id="audio-player"></audio>
 
 <script>
     let lines = [];
     let currentIdx = 0;
-    const setup = document.getElementById('setup');
-    const sync = document.getElementById('sync');
-    const lyricList = document.getElementById('lyric-list');
-    const tapBtn = document.getElementById('btn-tap');
     const player = document.getElementById('audio-player');
-    const srtText = document.getElementById('srt-text');
-    const output = document.getElementById('output');
+    const lyricList = document.getElementById('lyric-list');
+    const tapBtn = document.getElementById('btn-tap-master');
+    const playBtn = document.getElementById('btn-play-master');
+    const playIcon = document.getElementById('play-icon');
+    const playText = document.getElementById('play-text');
 
-    document.getElementById('btn-begin').onclick = () => {
-        const text = document.getElementById('raw-lyrics').value.trim();
-        if(!text) { alert("¡Pega la letra primero!"); return; }
-        
-        const file = document.getElementById('audio-file').files[0];
-        if(!file) { alert("¡Selecciona el archivo de audio!"); return; }
+    function parseInput(text) {
+        if (text.includes('-->')) {
+            const sections = text.trim().split(/\n\s*\n/);
+            return sections.map(s => {
+                const parts = s.split('\n');
+                const time = parts[1];
+                const content = parts.slice(2).join(' ');
+                let startMs = 0;
+                if (time) {
+                    const hms = time.split(' --> ')[0].split(':');
+                    const sec = hms[2].split(',');
+                    startMs = (parseInt(hms[0])*3600 + parseInt(hms[1])*60 + parseInt(sec[0])) * 1000 + parseInt(sec[1]);
+                }
+                return { text: content.trim(), startMs: startMs };
+            });
+        }
+        return text.split('\n').filter(l => l.trim() !== "").map(t => ({ text: t.trim(), startMs: null }));
+    }
 
-        lines = text.split('\n').filter(l => l.trim() !== "").map(t => ({ text: t.trim(), startMs: null }));
-        player.src = URL.createObjectURL(file);
+    // CARGA DESDE EL PADRE (PUENTE)
+    window.loadFromParent = function(audioBase64, lyricsText) {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('main-gui').style.display = 'grid';
         
+        player.src = audioBase64;
+        lines = parseInput(lyricsText);
         renderLines();
-        setup.style.display = 'none';
-        sync.classList.add('active');
     };
 
     function renderLines() {
         lyricList.innerHTML = "";
         lines.forEach((line, i) => {
             const div = document.createElement('div');
-            div.className = 'lyric-line' + (i === currentIdx ? ' active' : '');
-            div.innerText = line.text;
+            div.className = 'line' + (i === currentIdx ? ' active' : '') + (line.startMs !== null ? ' done' : '');
+            div.innerHTML = `<span>${line.text}</span><span class="line-time">${line.startMs ? formatSRTTime(line.startMs) : '--'}</span>`;
+            div.onclick = () => { currentIdx = i; renderLines(); };
             lyricList.appendChild(div);
         });
     }
 
+    // CONTROLES DE REPRODUCCION
+    playBtn.onclick = () => {
+        if(player.paused) {
+            player.play();
+            playBtn.classList.add('playing');
+            playIcon.innerText = "⏸";
+            playText.innerText = "PAUSAR MÚSICA";
+        } else {
+            player.pause();
+            playBtn.classList.remove('playing');
+            playIcon.innerText = "▶";
+            playText.innerText = "REPRODUCIR MÚSICA";
+        }
+    };
+
     function mark() {
         if(currentIdx >= lines.length) return;
-        
-        const timeMs = Math.round(player.currentTime * 1000);
-        lines[currentIdx].startMs = timeMs;
-        
-        const lineElements = lyricList.querySelectorAll('.lyric-line');
-        lineElements[currentIdx].classList.remove('active');
-        lineElements[currentIdx].classList.add('done');
-        
+        lines[currentIdx].startMs = Math.round(player.currentTime * 1000);
+        renderLines();
         currentIdx++;
-        
-        if(currentIdx < lines.length) {
-            lineElements[currentIdx].classList.add('active');
-            lineElements[currentIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-            generateSRT();
-        }
-
-        // Feedback visual
-        tapBtn.style.background = "#fff";
-        tapBtn.style.color = "#000";
-        setTimeout(() => { tapBtn.style.background = "var(--accent)"; tapBtn.style.color = "#fff"; }, 100);
+        const next = lyricList.children[currentIdx];
+        if(next) next.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+    tapBtn.onclick = mark;
+    window.onkeydown = (e) => { 
+        if(e.code === 'Space') { e.preventDefault(); mark(); }
+        if(e.code === 'Enter') { e.preventDefault(); playBtn.click(); }
+    };
 
     function generateSRT() {
         let srt = "";
         lines.forEach((line, i) => {
-            const start = formatSRTTime(line.startMs);
-            const end = (i < lines.length - 1) ? formatSRTTime(lines[i+1].startMs) : formatSRTTime(line.startMs + 2500);
+            const start = formatSRTTime(line.startMs || 0);
+            const end = (i < lines.length - 1) ? formatSRTTime(lines[i+1].startMs || (line.startMs + 3000)) : formatSRTTime((line.startMs || 0) + 3000);
             srt += `${i+1}\n${start} --> ${end}\n${line.text}\n\n`;
         });
-        srtText.innerText = srt;
-        output.classList.add('active');
-        output.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('srt-text').innerText = srt;
+        document.getElementById('result-overlay').classList.add('active');
     }
 
     function formatSRTTime(ms) {
@@ -209,21 +244,11 @@
         return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')},${mm.toString().padStart(3,'0')}`;
     }
 
-    tapBtn.onclick = mark;
-    window.onkeydown = (e) => {
-        if(sync.classList.contains('active') && e.code === 'Space') {
-            e.preventDefault();
-            mark();
-        }
-    };
-
-    document.getElementById('btn-copy').onclick = () => {
-        navigator.clipboard.writeText(srtText.innerText);
-        const btn = document.getElementById('btn-copy');
-        btn.innerText = "¡COPIADO!";
-        setTimeout(() => btn.innerText = "COPIAR AL PORTAPAPELES", 2000);
+    document.getElementById('btn-copy-all').onclick = () => {
+        navigator.clipboard.writeText(document.getElementById('srt-text').innerText);
+        document.getElementById('btn-copy-all').innerText = "¡COPIADO!";
+        setTimeout(() => document.getElementById('btn-copy-all').innerText = "📋 COPIAR TODO", 2000);
     };
 </script>
-
 </body>
 </html>
