@@ -29,19 +29,23 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font-meta)}
 
+
 body::after{
   content:'';position:fixed;inset:0;z-index:998;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
   opacity:0.5;mix-blend-mode:soft-light;
 }
 
+
 #app{display:flex;width:100%;height:100%}
+
 
 /* ── THREE.JS GALAXY BACKGROUND ── */
 #three-bg{
   position:fixed;inset:0;z-index:0;pointer-events:none;
 }
 #app{position:relative;z-index:1;}
+
 
 /* ── COVER PANEL ── */
 #cover-panel{
@@ -66,6 +70,7 @@ body::after{
   animation:glow-breathe 4s ease-in-out infinite alternate;
 }
 @keyframes glow-breathe{0%{transform:scale(0.9);opacity:0.6}100%{transform:scale(1.15);opacity:1}}
+
 
 #cover-img{
   position:relative;z-index:3;
@@ -103,11 +108,12 @@ body::after{
 }
 #cover-artist::before{content:'';width:20px;height:1px;background:var(--accent-40);flex-shrink:0}
 
+
 /* ── LYRIC PANEL ── */
 #lyric-panel{
   flex:1;display:flex;flex-direction:column;
   background:rgba(13,16,24,0.78);
-  padding:clamp(28px,5vw,64px) clamp(24px,4vw,52px) 0;
+  padding:clamp(52px,8vw,90px) clamp(24px,4vw,52px) 0;
   overflow:hidden;position:relative;
 }
 #lyric-panel::before{
@@ -122,12 +128,14 @@ body::after{
   background:linear-gradient(180deg,transparent,var(--accent-40) 30%,var(--accent-40) 70%,transparent);
 }
 
+
 #lyric-window{
   flex:1;overflow:hidden;position:relative;z-index:2;
-  mask-image:linear-gradient(180deg,transparent 0%,black 9%,black 78%,transparent 100%);
-  -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 9%,black 78%,transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0%,black 6%,black 78%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 6%,black 78%,transparent 100%);
 }
 #lyric-scroll{transition:transform 0.6s cubic-bezier(0.4,0,0.2,1)}
+
 
 /* ── LETRAS ── */
 .lyric-line{
@@ -151,6 +159,7 @@ body::after{
   color:transparent;
 }
 
+
 /* Indicador lateral */
 .lyric-line.active::after{
   content:'';position:absolute;left:-28px;top:50%;transform:translateY(-50%);
@@ -163,6 +172,7 @@ body::after{
   0% {opacity:0.5;height:35%}100%{opacity:1;height:70%}
 }
 
+
 /* ── CHARS activos — ACCENT COLOR, no blanco puro ── */
 .lyric-line .char{
   display:inline-block;
@@ -173,6 +183,7 @@ body::after{
 .lyric-line.past .char{
   color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.30);
 }
+
 
 .lyric-line.active .char{
   -webkit-text-fill-color:transparent;
@@ -210,6 +221,7 @@ body::after{
   -webkit-text-fill-color:transparent;background:none;filter:none;
 }
 
+
 .lyric-line::before{
   content:attr(data-num);
   position:absolute;left:-44px;top:50%;transform:translateY(-50%);
@@ -218,6 +230,7 @@ body::after{
   transition:color 0.4s ease;width:28px;text-align:right;
 }
 .lyric-line.active::before{color:var(--accent-40)}
+
 
 /* ── WAVEFORM ── */
 #viz-wrap{
@@ -250,12 +263,35 @@ body::after{
   pointer-events:none;z-index:2;
   transition:border-color 0.8s ease, box-shadow 0.8s ease;
 }
+
+
+/* ── RESTART BUTTON ── */
+#btn-restart{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.35);
+  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.08);
+  cursor:pointer;transition:all 0.25s ease;
+  color:var(--accent);font-size:0.95rem;
+  outline:none;backdrop-filter:blur(6px);
+}
+#btn-restart:hover{
+  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.22);
+  border-color:var(--accent);
+  box-shadow:0 0 14px rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.4);
+  transform:scale(1.08);
+}
+#btn-restart:active{ transform:scale(0.94); }
+#btn-restart svg{ pointer-events:none; }
 </style>
 </head>
 <body>
 <audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto" crossorigin="anonymous"></audio>
 
+
 <canvas id="three-bg"></canvas>
+
 
 <div id="app">
   <div id="cover-panel">
@@ -267,6 +303,7 @@ body::after{
       <div id="cover-artist">{{ARTIST_NAME}}</div>
     </div>
   </div>
+
 
   <div id="lyric-panel">
     <div id="lyric-window">
@@ -281,10 +318,17 @@ body::after{
           <canvas id="waveform-draw"></canvas>
         </div>
         <span id="time-total">0:00</span>
+        <button id="btn-restart" title="Reiniciar canción" aria-label="Reiniciar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
 </div>
+
 
 <script>
 const LYRICS_RAW = [{{LYRICS_JSON}}];
@@ -292,9 +336,11 @@ const LYRICS = typeof LYRICS_RAW[0] === 'string'
   ? LYRICS_RAW.map(text => ({ text, startMs: null, endMs: null }))
   : LYRICS_RAW;
 
+
 const ACTIVE_IDX = 2;
 let currentIdx   = 0;
 const audioEl    = document.getElementById('main-audio');
+
 
 /* ── DOM ── */
 const scrollEl = document.getElementById('lyric-scroll');
@@ -310,6 +356,7 @@ LYRICS.forEach((lineObj, i) => {
 });
 Splitting({ target: '.lyric-line', by: 'chars' });
 
+
 /* ── Color Thief — boost más agresivo para evitar colores apagados ── */
 const coverImg = document.getElementById('cover-img');
 function applyAccent(r,g,b){
@@ -317,14 +364,17 @@ function applyAccent(r,g,b){
   const max = Math.max(r,g,b), min = Math.min(r,g,b);
   const saturation = max === 0 ? 0 : (max - min) / max;
 
+
   /* Si el color es muy desaturado (gris/blanco), forzar azul por defecto */
   if(saturation < 0.18){ r=80; g=140; b=255; }
+
 
   /* 2. Boost de luminosidad para que no quede oscuro */
   const boost = max < 80 ? 3.8 : max < 130 ? 2.5 : max < 180 ? 1.8 : 1.3;
   r = Math.min(255, Math.round(r * boost));
   g = Math.min(255, Math.round(g * boost));
   b = Math.min(255, Math.round(b * boost));
+
 
   /* 3. Floor mínimo de luminosidad */
   const newMax = Math.max(r,g,b);
@@ -334,6 +384,7 @@ function applyAccent(r,g,b){
     g = Math.min(255, Math.round(g * lift));
     b = Math.min(255, Math.round(b * lift));
   }
+
 
   const root = document.documentElement;
   root.style.setProperty('--accent-r', r || 120);
@@ -362,6 +413,7 @@ function tryColorThief(){
 coverImg.addEventListener('load', tryColorThief);
 if(coverImg.complete && coverImg.naturalWidth) tryColorThief();
 
+
 /* ── Letras ── */
 function updateLines(){
   lineEls.forEach((el,i) => {
@@ -387,6 +439,7 @@ function advance(){
   window._lyricsTimeout = setTimeout(() => { currentIdx++; advance(); }, hold);
 }
 
+
 /* ══════════════════════════════════════════════
    VISUALIZADOR REAL-TIME — solo AnalyserNode
    ══════════════════════════════════════════════ */
@@ -397,18 +450,22 @@ const timeCur = document.getElementById('time-current');
 const timeTot = document.getElementById('time-total');
 const track   = document.getElementById('waveform-track');
 
+
 let audioDuration = 0;
 let audioCtx      = null;
 let analyserNode  = null;
 let freqData      = null;
 let canvasW = 0, canvasH = 0;
 
+
 function fmt(s){ return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; }
+
 
 function getAccent(alpha){
   const st = getComputedStyle(document.documentElement);
   return `rgba(${st.getPropertyValue('--accent-r').trim()},${st.getPropertyValue('--accent-g').trim()},${st.getPropertyValue('--accent-b').trim()},${alpha})`;
 }
+
 
 function resizeCanvas(){
   const rect = canvas.getBoundingClientRect();
@@ -419,6 +476,7 @@ function resizeCanvas(){
   canvas.height = canvasH;
 }
 window.addEventListener('resize', resizeCanvas);
+
 
 /* Iniciar AudioContext + AnalyserNode en primer gesto */
 function initAnalyser(){
@@ -432,25 +490,31 @@ function initAnalyser(){
     src.connect(analyserNode);
     analyserNode.connect(audioCtx.destination);
     freqData = new Uint8Array(analyserNode.frequencyBinCount);
-    window._freqData = freqData; /* 128 valores 0-255 */
+    window._freqData    = freqData;        /* datos de frecuencia compartidos */
+    window._analyserNode = analyserNode;   /* expuesto para que la galaxia lea por sí misma */
   }catch(e){ console.warn('AnalyserNode error:', e); }
 }
+
 
 /* Loop de dibujo — corre siempre */
 function drawLoop(){
   requestAnimationFrame(drawLoop);
   ctx2d.clearRect(0, 0, canvasW, canvasH);
 
+
   /* Leer frecuencias del frame actual */
   if(analyserNode && freqData) analyserNode.getByteFrequencyData(freqData);
+
 
   const BARS    = 80;                          /* cantidad de barras visibles */
   const barW    = canvasW / BARS;
   const cx      = canvasH / 2;
   const playedX = audioDuration ? (audioEl.currentTime / audioDuration) * canvasW : 0;
 
+
   for(let i = 0; i < BARS; i++){
     const x = i * barW;
+
 
     /* Mapear barra → bin de frecuencia (solo bajos+medios, más vistoso) */
     let energy = 0;
@@ -459,14 +523,17 @@ function drawLoop(){
       energy = freqData[binIdx] / 255; /* 0.0 → 1.0 */
     }
 
+
     const amp    = energy * cx * 0.92;
     const played = x < playedX;
+
 
     /* Barra arriba */
     ctx2d.fillStyle = played ? getAccent(0.9) : 'rgba(255,255,255,0.13)';
     ctx2d.beginPath();
     ctx2d.roundRect(x + 0.5, cx - amp, Math.max(1, barW - 1.5), Math.max(2, amp), 1);
     ctx2d.fill();
+
 
     /* Reflejo abajo */
     ctx2d.globalAlpha = 0.25;
@@ -476,6 +543,7 @@ function drawLoop(){
     ctx2d.fill();
     ctx2d.globalAlpha = 1;
   }
+
 
   /* Línea de playhead */
   if(playedX > 0 && playedX < canvasW){
@@ -487,6 +555,7 @@ function drawLoop(){
     ctx2d.shadowBlur  = 0;
   }
 
+
   /* Actualizar tiempo y barra de progreso */
   if(audioDuration){
     progress.style.width = (audioEl.currentTime / audioDuration * 100) + '%';
@@ -494,12 +563,16 @@ function drawLoop(){
   }
 }
 
+
 /* Obtener duración cuando el audio carga */
 audioEl.addEventListener('loadedmetadata', () => {
   audioDuration       = audioEl.duration;
   timeTot.textContent = fmt(audioDuration);
 });
 audioEl.addEventListener('play', () => { initAnalyser(); });
+/* Primer clic en cualquier parte = AudioContext desbloqueado */
+document.addEventListener('click', initAnalyser, { once: true });
+
 
 track.addEventListener('click', e => {
   if(!audioDuration) return;
@@ -507,6 +580,7 @@ track.addEventListener('click', e => {
   const rect = track.getBoundingClientRect();
   audioEl.currentTime = ((e.clientX - rect.left) / rect.width) * audioDuration;
 });
+
 
 window.seekTo = function(ms){
   let newIdx = 0;
@@ -519,6 +593,7 @@ window.seekTo = function(ms){
   audioEl.currentTime = ms / 1000;
 };
 
+
 /* ══════════════════════════════════════════════
    THREE.JS GALAXY — v2: cámara reactiva + colores correctos
    ══════════════════════════════════════════════ */
@@ -529,17 +604,21 @@ window.seekTo = function(ms){
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
 
+
   const scene  = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 100);
   /* Posición inicial: ángulo bajo, vista cinematográfica de la galaxia */
   camera.position.set(0, 1.8, 5.5);
   camera.lookAt(0, 0, 0);
 
+
   let points   = null;
   let matSize  = 0.018;  /* tamaño base de partícula — controlado por audio */
 
+
   function buildGalaxy(ar, ag, ab){
     if(points){ points.geometry.dispose(); points.material.dispose(); scene.remove(points); }
+
 
     const COUNT      = 9000;
     const ARMS       = 3;
@@ -548,21 +627,26 @@ window.seekTo = function(ms){
     const RANDOM_POW = 3.0;   /* alto = partículas más pegadas a los brazos */
     const RAND_SCALE = 0.22;
 
+
     const positions = new Float32Array(COUNT * 3);
     const colors    = new Float32Array(COUNT * 3);
+
 
     /* Colores: core brillante (blanco cálido) → brazo (accent) → borde (accent oscuro) */
     const cCore  = new THREE.Color(1.0,  0.95, 0.85);                      /* blanco cálido centro */
     const cMid   = new THREE.Color(ar/255, ag/255, ab/255);                 /* accent puro en brazo */
     const cEdge  = new THREE.Color(ar/255*0.4, ag/255*0.4, ab/255*0.4);   /* accent oscuro borde */
 
+
     for(let i = 0; i < COUNT; i++){
       const i3 = i * 3;
+
 
       /* Distribución de radio: √random → más densidad en zona media, no en centro */
       const r   = Math.sqrt(Math.random()) * RADIUS;
       const arm = (i % ARMS) / ARMS * Math.PI * 2;
       const ang = arm + r * SPIN;
+
 
       /* Randomness cae con la distancia al brazo */
       const spread = RAND_SCALE * r;
@@ -570,9 +654,11 @@ window.seekTo = function(ms){
       const ry = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread * 0.25;
       const rz = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread;
 
+
       positions[i3]   = Math.cos(ang) * r + rx;
       positions[i3+1] = ry;
       positions[i3+2] = Math.sin(ang) * r + rz;
+
 
       /* Color: 0→cCore (centro), 0.4→cMid (brazo), 1→cEdge (borde) */
       const t = r / RADIUS;
@@ -580,17 +666,20 @@ window.seekTo = function(ms){
         ? cCore.clone().lerp(cMid, t / 0.4)
         : cMid.clone().lerp(cEdge, (t - 0.4) / 0.6);
 
+
       colors[i3]   = c.r;
       colors[i3+1] = c.g;
       colors[i3+2] = c.b;
     }
 
+
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('color',    new THREE.BufferAttribute(colors,    3));
 
+
     const mat = new THREE.PointsMaterial({
-      size:            matSize,
+      size:            0.018,
       sizeAttenuation: true,
       depthWrite:      false,
       blending:        THREE.AdditiveBlending,
@@ -599,60 +688,64 @@ window.seekTo = function(ms){
       opacity:         0.9,
     });
 
+
     points = new THREE.Points(geo, mat);
     scene.add(points);
   }
 
-  buildGalaxy(120, 180, 255);
 
+  buildGalaxy(120, 180, 255);
   window._updateGalaxyAccent = function(r,g,b){ buildGalaxy(r,g,b); };
 
-  /* ── Estado de cámara con lerp suave ── */
-  let rotY    = 0;
-  let clock   = 0;
-  let camZ    = 5.5, camX = 0, camY = 1.8;
-  let targetZ = 5.5, targetX = 0, targetY = 1.8;
+
+  /* ── Cámara: DIRECTO como las barras ──
+     bass   = zoom in/out (Z)
+     mid    = sway lateral (X)
+     treble = tilt vertical (Y)
+  ── */
+  let rotY  = 0;
+  let clock = 0;
+  const BASE_Z = 5.5, BASE_Y = 1.8;
+  let camZ = BASE_Z, camX = 0, camY = BASE_Y;
+
 
   function galaxyLoop(){
     requestAnimationFrame(galaxyLoop);
-    clock += 0.01;
+    clock += 0.005;
 
-    /* Leer energía del audio */
+    /* 1. LEER AUDIO */
     let bass = 0, mid = 0, treble = 0;
-    if(window._freqData){
-      const fd = window._freqData;
-      for(let i = 0;  i < 6;  i++) bass   += fd[i];
-      for(let i = 6;  i < 28; i++) mid    += fd[i];
-      for(let i = 28; i < 60; i++) treble += fd[i];
-      bass   /= (6  * 255);
-      mid    /= (22 * 255);
-      treble /= (32 * 255);
+    const an = window._analyserNode;
+    const fd = window._freqData;
+    if(an && fd){
+      an.getByteFrequencyData(fd);
+      for(let i = 0;  i < 6;  i++) bass   += fd[i]; // Bombos
+      for(let i = 6;  i < 20; i++) mid    += fd[i]; // Voces/Instrumentos
+      for(let i = 20; i < 60; i++) treble += fd[i]; // Brillo
+      bass /= (6*255); mid /= (14*255); treble /= (40*255);
     }
 
-    /* ── Rotación: velocidad base + boost en beat ── */
-    rotY += 0.0008 + bass * 0.008;
-    if(points) points.rotation.y = rotY;
+    /* 2. ROTACIÓN Y BALANCEO — ELIMINADOS POR COMPLETO (0% MAREO) */
+    if(points) points.rotation.set(0, 0, 0);
 
-    /* ── Movimiento de cámara reactivo ── */
-    /* Zoom in/out: bass empuja la cámara hacia la galaxia */
-    targetZ = 5.5 + Math.sin(clock * 0.18) * 0.6 - bass * 2.2;
+    /* 3. ZOOM REACTIVO (Único movimiento permitido) */
+    const targetZ = BASE_Z - (bass * 3.5); 
+    
+    /* 4. POSICIÓN FIJA (Sin Sway ni Tilt) */
+    const targetX = 0; 
+    const targetY = BASE_Y;
 
-    /* Sway lateral: mid mueve la cámara de lado */
-    targetX = Math.sin(clock * 0.22) * 0.4 + mid * 0.9;
-
-    /* Tilt vertical: treble sube/baja levemente */
-    targetY = 1.8 + Math.sin(clock * 0.13) * 0.25 + treble * 0.5;
-
-    /* Lerp suave para que no sea abrupto */
-    camZ += (targetZ - camZ) * 0.06;
-    camX += (targetX - camX) * 0.06;
-    camY += (targetY - camY) * 0.06;
-
-    camera.position.set(camX, camY, camZ);
+    /* 5. LERP SOLO EN PROFUNDIDAD */
+    camera.position.z += (targetZ - camera.position.z) * 0.12;
+    camera.position.x = 0;
+    camera.position.y = BASE_Y;
     camera.lookAt(0, 0, 0);
 
-    /* Tamaño de partícula pulsa levemente con el beat */
-    if(points) points.material.size = 0.016 + bass * 0.018 + mid * 0.008;
+    /* 6. REACCIÓN DE PARTÍCULAS */
+    if(points) {
+      points.material.size = 0.015 + (bass * 0.05);
+      points.material.opacity = 0.5 + (mid * 0.5);
+    }
 
     renderer.render(scene, camera);
   }
@@ -665,8 +758,6 @@ window.seekTo = function(ms){
   });
 })();
 
-
-
 window.IS_RENDERING = false;
 
 function init(){
@@ -678,6 +769,23 @@ function init(){
     setTimeout(advance, delay);
   }
 }
+
+/* ── Botón Restart ── */
+document.getElementById('btn-restart').addEventListener('click', () => {
+  if(window._lyricsTimeout) clearTimeout(window._lyricsTimeout);
+  audioEl.currentTime = 0;
+  audioEl.play().catch(()=>{});
+  currentIdx = 0;
+  updateLines();
+  const delay = LYRICS[0]?.startMs ?? 0;
+  window._lyricsTimeout = setTimeout(advance, delay);
+});
+
+audioEl.addEventListener('play', initAnalyser);
+audioEl.addEventListener('canplay', () => {
+  initAnalyser();
+  audioCtx?.resume();
+}, { once: true });
 
 setTimeout(init, 400);
 </script>

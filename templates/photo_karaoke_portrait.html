@@ -7,6 +7,7 @@
 <script src="https://unpkg.com/splitting/dist/splitting.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/splitting/dist/splitting.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300;1,600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -34,7 +35,32 @@ body::after{
   opacity:0.4;mix-blend-mode:soft-light;
 }
 
-#app{display:flex;flex-direction:column;width:100%;height:100%}
+#app{display:flex;flex-direction:column;width:100%;height:100%;position:relative;z-index:1}
+
+/* ── THREE.JS GALAXY BACKGROUND ── */
+#three-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+}
+
+/* ── RESTART BUTTON ── */
+#btn-restart{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.35);
+  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.08);
+  cursor:pointer;transition:all 0.25s ease;
+  color:var(--accent);
+  outline:none;backdrop-filter:blur(6px);
+}
+#btn-restart:hover{
+  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.22);
+  border-color:var(--accent);
+  box-shadow:0 0 14px rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.4);
+  transform:scale(1.08);
+}
+#btn-restart:active{ transform:scale(0.94); }
+#btn-restart svg{ pointer-events:none; }
 
 /* ── COVER AREA ── */
 #cover-panel{
@@ -147,7 +173,9 @@ body::after{
 </style>
 </head>
 <body>
-<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto"></audio>
+<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto" crossorigin="anonymous"></audio>
+
+<canvas id="three-bg"></canvas>
 
 <div id="app">
   <div id="cover-panel">
@@ -172,6 +200,12 @@ body::after{
           <canvas id="waveform-draw"></canvas>
         </div>
         <span id="time-total">0:00</span>
+        <button id="btn-restart" title="Reiniciar canción" aria-label="Reiniciar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -345,7 +379,160 @@ window.seekTo = function(ms){
 };
 
 window.IS_RENDERING = false;
-function startLogic(){ if(!window.IS_RENDERING){ audioEl.play().catch(()=>{}); setTimeout(advance, LYRICS[0]?.startMs??0); } }
+
+/* ── AnalyserNode para visualización en tiempo real ── */
+let audioCtxP = null, analyserP = null;
+window._freqDataP = null;
+
+function initAnalyserPortrait(){
+  if(audioCtxP){ audioCtxP.resume(); return; }
+  try{
+    audioCtxP  = new (window.AudioContext || window.webkitAudioContext)();
+    analyserP  = audioCtxP.createAnalyser();
+    analyserP.fftSize = 256;
+    analyserP.smoothingTimeConstant = 0.8;
+    const src  = audioCtxP.createMediaElementSource(audioEl);
+    src.connect(analyserP);
+    analyserP.connect(audioCtxP.destination);
+    window._freqDataP = new Uint8Array(analyserP.frequencyBinCount);
+  }catch(e){}
+}
+audioEl.addEventListener('play', initAnalyserPortrait);
+/* Un clic en cualquier parte desbloquea el audio analizado */
+document.addEventListener('click', initAnalyserPortrait, { once: true });
+
+/* ── THREE.JS GALAXY (Portrait) ── */
+(function(){
+  const threeCanvas = document.getElementById('three-bg');
+  const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 100);
+  camera.position.set(0, 2.5, 6);
+  camera.lookAt(0, 0, 0);
+
+  let points = null;
+
+  function buildGalaxy(ar, ag, ab){
+    if(points){ points.geometry.dispose(); points.material.dispose(); scene.remove(points); }
+    const COUNT=7000, ARMS=3, RADIUS=5, SPIN=2.2, RANDOM_POW=3.0, RAND_SCALE=0.22;
+    const positions = new Float32Array(COUNT*3);
+    const colors    = new Float32Array(COUNT*3);
+    const cCore = new THREE.Color(1.0, 0.95, 0.85);
+    const cMid  = new THREE.Color(ar/255, ag/255, ab/255);
+    const cEdge = new THREE.Color(ar/255*0.4, ag/255*0.4, ab/255*0.4);
+    for(let i=0; i<COUNT; i++){
+      const i3=i*3, r=Math.sqrt(Math.random())*RADIUS;
+      const arm=(i%ARMS)/ARMS*Math.PI*2, ang=arm+r*SPIN;
+      const spread=RAND_SCALE*r;
+      const rx=Math.pow(Math.random(),RANDOM_POW)*(Math.random()<0.5?1:-1)*spread;
+      const ry=Math.pow(Math.random(),RANDOM_POW)*(Math.random()<0.5?1:-1)*spread*0.25;
+      const rz=Math.pow(Math.random(),RANDOM_POW)*(Math.random()<0.5?1:-1)*spread;
+      positions[i3]=Math.cos(ang)*r+rx; positions[i3+1]=ry; positions[i3+2]=Math.sin(ang)*r+rz;
+      const t=r/RADIUS;
+      const c=t<0.4?cCore.clone().lerp(cMid,t/0.4):cMid.clone().lerp(cEdge,(t-0.4)/0.6);
+      colors[i3]=c.r; colors[i3+1]=c.g; colors[i3+2]=c.b;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(colors,3));
+    const mat = new THREE.PointsMaterial({
+      size:0.018, sizeAttenuation:true, depthWrite:false,
+      blending:THREE.AdditiveBlending, vertexColors:true, transparent:true, opacity:0.9
+    });
+    points = new THREE.Points(geo, mat);
+    scene.add(points);
+  }
+
+  buildGalaxy(120, 180, 255);
+  window._updateGalaxyAccent = function(r,g,b){ buildGalaxy(r,g,b); };
+
+  const BASE_Z=6, BASE_Y=2.5;
+  let rotY=0, clock=0;
+  let camZ=BASE_Z, camX=0, camY=BASE_Y;
+
+  function galaxyLoop(){
+    requestAnimationFrame(galaxyLoop);
+    clock += 0.005;
+
+    /* 1. LEER AUDIO */
+    let bass = 0, mid = 0, treble = 0;
+    const an = analyserP;
+    const fd = window._freqDataP;
+    if(an && fd){
+      an.getByteFrequencyData(fd);
+      for(let i = 0;  i < 6;  i++) bass   += fd[i]; 
+      for(let i = 6;  i < 20; i++) mid    += fd[i]; 
+      for(let i = 20; i < 60; i++) treble += fd[i]; 
+      bass /= (6*255); mid /= (14*255); treble /= (40*255);
+    }
+
+    /* 2. ROTACIÓN Y BALANCEO — ELIMINADOS */
+    if(points) points.rotation.set(0, 0, 0);
+
+    /* 3. ZOOM REACTIVO */
+    const targetZ = BASE_Z - (bass * 3.5); 
+    
+    /* 4. POSICIÓN FIJA */
+    const targetX = 0; 
+    const targetY = BASE_Y;
+
+    /* 5. LERP SOLO EN PROFUNDIDAD */
+    camera.position.z += (targetZ - camera.position.z) * 0.12;
+    camera.position.x = 0;
+    camera.position.y = BASE_Y;
+    camera.lookAt(0, 0, 0);
+
+    /* 6. REACCIÓN DE PARTÍCULAS */
+    if(points) {
+      points.material.size = 0.015 + (bass * 0.05);
+      points.material.opacity = 0.5 + (mid * 0.5);
+    }
+
+    renderer.render(scene, camera);
+  }
+  galaxyLoop();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+})();
+
+/* ── Actualizar accent de galaxia desde applyAccent ── */
+const _origApply = applyAccent;
+function applyAccent(r,g,b){
+  _origApply(r,g,b);
+  if(window._updateGalaxyAccent) window._updateGalaxyAccent(r||120,g||180,b||255);
+}
+
+function startLogic(){
+  if(!window.IS_RENDERING){
+    audioEl.play().catch(()=>{});
+    setTimeout(advance, LYRICS[0]?.startMs??0);
+  }
+}
+
+/* ── Botón Restart ── */
+document.getElementById('btn-restart').addEventListener('click', () => {
+  if(window._lyricsTimeout) clearTimeout(window._lyricsTimeout);
+  audioEl.currentTime = 0;
+  audioEl.play().catch(()=>{});
+  currentIdx = 0;
+  updateLines();
+  window._lyricsTimeout = setTimeout(advance, LYRICS[0]?.startMs??0);
+});
+
+audioEl.addEventListener('play', initAnalyserPortrait);
+audioEl.addEventListener('canplay', () => {
+  initAnalyserPortrait();
+  audioCtxP?.resume();
+}, { once: true });
+
 autoInitWaveform(); setTimeout(startLogic, 600);
 window.addEventListener('resize', drawWaveform);
 </script>
