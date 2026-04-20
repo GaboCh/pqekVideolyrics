@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Karaoke — Landscape</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://unpkg.com/splitting/dist/splitting.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/splitting/dist/splitting.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#04060a;font-family:'Inter',sans-serif}
+
+  :root{
+    --accent-r:100;--accent-g:170;--accent-b:255;
+    --accent:rgb(var(--accent-r),var(--accent-g),var(--accent-b));
+    --accent-dim:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.18);
+    --accent-glow:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.55);
+  }
+
+  body::after{
+    content:'';position:fixed;inset:0;z-index:999;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity:0.35;mix-blend-mode:overlay;
+  }
+
+  #app{display:flex;width:100%;height:100%}
+
+  /* ── LEFT panel ── */
+  #cover-panel{
+    flex:0 0 45%;position:relative;
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #cover-bg{
+    position:absolute;inset:-20px;
+    background-image:url('{{COVER_IMAGE}}');
+    background-size:cover;background-position:center;
+    filter:blur(28px) brightness(0.25) saturate(1.8);
+    transform:scale(1.15);
+    transition:filter 1.2s ease;
+  }
+  #cover-panel::after{
+    content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
+    background:linear-gradient(90deg,transparent 50%,rgba(4,6,10,0.7) 80%,rgba(4,6,10,1) 100%);
+  }
+
+  /* ── Cover image: float automático ── */
+  #cover-img{
+    position:relative;z-index:2;
+    width:min(320px,78%);height:min(320px,78%);
+    object-fit:cover;border-radius:16px;
+    box-shadow:
+      0 32px 80px rgba(0,0,0,0.85),
+      0 0 0 1px rgba(255,255,255,0.06),
+      0 0 80px var(--accent-dim);
+    animation: cover-float 6s ease-in-out infinite;
+    transition: box-shadow 1s ease;
+  }
+  @keyframes cover-float {
+    0%   { transform: rotate(-2deg) translateY(0px)   scale(1);    }
+    25%  { transform: rotate(0deg)  translateY(-10px) scale(1.02); }
+    50%  { transform: rotate(2deg)  translateY(-4px)  scale(1.03); }
+    75%  { transform: rotate(0deg)  translateY(-12px) scale(1.02); }
+    100% { transform: rotate(-2deg) translateY(0px)   scale(1);    }
+  }
+
+  #cover-info{
+    position:absolute;bottom:0;left:0;right:0;z-index:5;
+    padding:clamp(16px,3vw,36px);
+    background:linear-gradient(0deg,rgba(4,6,10,0.95) 0%,rgba(4,6,10,0.5) 60%,transparent 100%);
+  }
+  #cover-title{
+    font-family:'Playfair Display',serif;font-style:italic;
+    font-size:clamp(1.8rem,4vw,3.6rem);
+    color:#fff;line-height:1.05;letter-spacing:-0.01em;
+    text-shadow:0 2px 30px rgba(0,0,0,0.9);
+  }
+  #cover-artist{
+    font-size:clamp(0.7rem,1.2vw,0.95rem);
+    color:rgba(255,255,255,0.45);
+    letter-spacing:0.3em;text-transform:uppercase;
+    margin-top:8px;display:flex;align-items:center;gap:8px;
+  }
+  #cover-artist::before{
+    content:'';width:18px;height:1px;
+    background:rgba(255,255,255,0.3);flex-shrink:0;
+  }
+
+  /* ── RIGHT panel ── */
+  #lyric-panel{
+    flex:1;display:flex;flex-direction:column;
+    background:transparent;
+    padding:clamp(24px,4vw,52px) clamp(20px,3vw,44px) 0;
+    overflow:hidden;position:relative;
+  }
+  #lyric-panel::before{
+    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 70% 50% at 80% 40%, var(--accent-dim) 0%, transparent 70%),
+      linear-gradient(180deg,#04060a 0%,#070b10 100%);
+    transition:background 1s ease;
+  }
+
+  #lyric-window{
+    flex:1;overflow:hidden;position:relative;z-index:1;
+    mask-image:linear-gradient(180deg,transparent 0%,black 10%,black 80%,transparent 100%);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 10%,black 80%,transparent 100%);
+  }
+  #lyric-scroll{transition:transform 0.55s cubic-bezier(0.4,0,0.2,1)}
+
+  .lyric-line{
+    padding:clamp(7px,1.3vh,16px) 0;
+    font-size:clamp(1rem,2vw,1.85rem);
+    font-weight:600;line-height:1.4;letter-spacing:-0.01em;
+    color:rgba(255,255,255,0.14);
+    transition:color 0.4s ease,
+               font-size 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    cursor:default;position:relative;
+    white-space:normal;word-break:break-word;
+  }
+  .lyric-line.past{
+    color:rgba(255,255,255,0.28);
+    font-size:clamp(0.95rem,1.85vw,1.7rem);
+  }
+  .lyric-line.active{
+    font-size:clamp(1.35rem,2.7vw,2.45rem);
+    color:rgba(255,255,255,0.12);
+  }
+
+  /* Barra lateral activa */
+  .lyric-line.active::after{
+    content:'';
+    position:absolute;left:-18px;top:50%;
+    transform:translateY(-50%);
+    width:4px;height:60%;border-radius:4px;
+    background:linear-gradient(180deg, var(--accent), var(--accent-glow));
+    box-shadow:0 0 14px var(--accent-glow);
+    animation:bar-glow 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes bar-glow{
+    0%{opacity:0.6;height:40%}
+    100%{opacity:1;height:75%}
+  }
+
+  /* ── Splitting: chars ── */
+  .lyric-line .char{
+    display:inline-block;
+    color:rgba(255,255,255,0.14);
+    transition:color 0.3s ease, text-shadow 0.3s ease;
+  }
+  .lyric-line.past .char{color:rgba(255,255,255,0.28)}
+  .lyric-line.active .char{
+    animation:
+      char-in    0.35s cubic-bezier(0.34,1.56,0.64,1) both,
+      char-shine 2.2s  linear infinite;
+    animation-delay:
+      calc(var(--char-index) * 0.04s),
+      calc(var(--char-index) * 0.06s);
+    -webkit-text-fill-color:transparent;
+    background:linear-gradient(
+      90deg,
+      rgba(255,255,255,0.4) 0%,
+      var(--accent) 40%,
+      #fff 50%,
+      var(--accent) 60%,
+      rgba(255,255,255,0.4) 100%
+    );
+    background-size:300% auto;
+    -webkit-background-clip:text;
+    background-clip:text;
+    filter:drop-shadow(0 0 8px var(--accent-glow));
+  }
+  @keyframes char-in{
+    0%  {opacity:0;transform:translateY(6px) scale(0.85)}
+    100%{opacity:1;transform:translateY(0)   scale(1)}
+  }
+  @keyframes char-shine{
+    0%  {background-position:200% center}
+    100%{background-position:-200% center}
+  }
+
+  /* ── Visualizador ── */
+  #visualizer{
+    height:clamp(50px,9vh,90px);
+    display:flex;align-items:flex-end;
+    gap:2px;padding:10px 0 16px;
+    flex-shrink:0;position:relative;z-index:1;
+  }
+  #visualizer::before{
+    content:'';position:absolute;
+    bottom:14px;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent-dim),transparent);
+  }
+  #visualizer::after{
+    content:'';position:absolute;
+    bottom:0;left:5%;right:5%;height:18px;
+    background:radial-gradient(ellipse 60% 100% at 50% 100%, var(--accent-dim), transparent);
+    pointer-events:none;
+  }
+  .bar{
+    flex:1;border-radius:3px 3px 0 0;min-height:3px;
+    animation:bar-pulse var(--d,0.8s) ease-in-out infinite alternate;
+    background:linear-gradient(
+      180deg,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.8) 0%,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.15) 100%
+    );
+    transition:background 1s ease;
+  }
+  .bar.accent{
+    background:linear-gradient(
+      180deg,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),1) 0%,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.3) 100%
+    );
+    box-shadow:0 0 8px var(--accent-glow);
+  }
+  .bar:nth-child(even){opacity:0.75}
+  @keyframes bar-pulse{
+    0%  {height:var(--min,4px);  opacity:0.3}
+    100%{height:var(--max,40px); opacity:0.95}
+  }
+
+  /* Espejo */
+  #visualizer-mirror{
+    height:clamp(14px,2.5vh,28px);
+    display:flex;align-items:flex-start;
+    gap:2px;padding:0 0 4px;
+    flex-shrink:0;position:relative;z-index:1;
+    opacity:0.18;transform:scaleY(-1);
+    mask-image:linear-gradient(180deg,black 0%,transparent 100%);
+    -webkit-mask-image:linear-gradient(180deg,black 0%,transparent 100%);
+  }
+  .bar-m{
+    flex:1;border-radius:0 0 2px 2px;min-height:2px;
+    background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.5);
+    animation:bar-pulse var(--d,0.8s) ease-in-out infinite alternate;
+  }
+</style>
+</head>
+<body>
+<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto"></audio>
+
+<div id="app">
+  <div id="cover-panel">
+    <div id="cover-bg"></div>
+    <img id="cover-img" src="{{COVER_IMAGE}}" alt="cover" crossorigin="anonymous">
+    <div id="cover-info">
+      <div id="cover-title">{{SONG_NAME}}</div>
+      <div id="cover-artist">{{ARTIST_NAME}}</div>
+    </div>
+  </div>
+
+  <div id="lyric-panel">
+    <div id="lyric-window">
+      <div id="lyric-scroll"></div>
+    </div>
+    <div id="visualizer"></div>
+    <div id="visualizer-mirror"></div>
+  </div>
+</div>
+
+<script>
+const LYRICS_RAW = [{{LYRICS_JSON}}];
+const LYRICS = typeof LYRICS_RAW[0] === 'string' 
+  ? LYRICS_RAW.map(text => ({ text: text, startMs: null, endMs: null })) 
+  : LYRICS_RAW;
+
+const ACTIVE_IDX = 2;
+let currentIdx = 0;
+let startTime = 0; // tiempo de inicio de la reproducción
+
+const scrollEl = document.getElementById('lyric-scroll');
+const lineEls  = [];
+
+LYRICS.forEach((lineObj) => {
+  const el = document.createElement('div');
+  // Integración de Animate.css para la entrada alfanumérica
+  el.className    = 'lyric-line animate__animated animate__fadeInUp';
+  el.dataset.text = lineObj.text;
+  el.textContent  = lineObj.text;
+  scrollEl.appendChild(el);
+  lineEls.push(el);
+});
+
+Splitting({ target: '.lyric-line', by: 'chars' });
+
+// ── Color Thief ──────────────────────────────────────
+const coverImg = document.getElementById('cover-img');
+function applyAccent(r, g, b){
+  const boost = 1.3;
+  r = Math.min(255, Math.round(r * boost));
+  g = Math.min(255, Math.round(g * boost));
+  b = Math.min(255, Math.round(b * boost));
+  const root = document.documentElement;
+  root.style.setProperty('--accent-r', r);
+  root.style.setProperty('--accent-g', g);
+  root.style.setProperty('--accent-b', b);
+}
+function tryColorThief(){
+  try {
+    const ct = new ColorThief();
+    const [r,g,b] = ct.getColor(coverImg);
+    applyAccent(r,g,b);
+  } catch(e){}
+}
+coverImg.addEventListener('load', tryColorThief);
+if(coverImg.complete && coverImg.naturalWidth) tryColorThief();
+
+// ── Lines ────────────────────────────────────────────
+function updateLines(){
+  lineEls.forEach((el, i) => {
+    el.classList.remove('active','past');
+    if(i === currentIdx)    el.classList.add('active');
+    else if(i < currentIdx) el.classList.add('past');
+  });
+  const lineH  = lineEls[0] ? lineEls[0].offsetHeight : 40;
+  const offset = Math.max(0, currentIdx - ACTIVE_IDX) * lineH;
+  scrollEl.style.transform = `translateY(-${offset}px)`;
+}
+
+function getHoldMs(lineObj){
+  // Si no tenemos SRT, adivinamos en base al texto
+  if(lineObj.startMs === null || lineObj.endMs === null) {
+    if(!lineObj.text || !lineObj.text.trim()) return 600;
+    return Math.max(1400, lineObj.text.length * 65);
+  }
+  // Si tenemos SRT, calculamos duración de la frase
+  return Math.max(0, lineObj.endMs - lineObj.startMs);
+}
+
+function advance(){
+  if(currentIdx >= LYRICS.length) return;
+  updateLines();
+  
+  const currentLine = LYRICS[currentIdx];
+  const nextLine = LYRICS[currentIdx + 1];
+
+  let hold = getHoldMs(currentLine);
+  
+  // Si tenemos tiempos SRT, en lugar de predecir cuánto dura la línea y parar,
+  // podríamos programar la siguiente línea EXACTAMENTE cuando su startMs lo indique.
+  if(nextLine && nextLine.startMs !== null && currentLine.startMs !== null) {
+      hold = nextLine.startMs - currentLine.startMs; // tiempo exacto hasta la siguiente
+      // Por si se superponen o hay márgenes raros
+      hold = Math.max(10, hold);
+  }
+
+  setTimeout(() => { currentIdx++; advance(); }, hold);
+}
+
+// ── Visualizer ───────────────────────────────────────
+const viz = document.getElementById('visualizer');
+const BAR_COUNT = 48;
+function spectrumMax(i, total){
+  const x   = i / (total - 1);
+  const mid = Math.abs(x - 0.5) * 2;
+  return 18 + mid * 30 + Math.random() * 16;
+}
+for(let i = 0; i < BAR_COUNT; i++){
+  const b = document.createElement('div');
+  b.className = 'bar' + (i % 6 === 2 || i % 6 === 5 ? ' accent' : '');
+  const minH = 3 + Math.random() * 6;
+  const maxH = spectrumMax(i, BAR_COUNT);
+  const dur  = 0.35 + Math.random() * 0.75;
+  const x    = i / (BAR_COUNT - 1);
+  const mid  = Math.abs(x - 0.5) * 2;
+  b.style.setProperty('--min', minH + 'px');
+  b.style.setProperty('--max', maxH + 'px');
+  b.style.setProperty('--d',   dur  + 's');
+  b.style.animationDelay = (Math.random() * dur) + 's';
+  b.style.flex = (0.5 + mid * 0.9).toString();
+  viz.appendChild(b);
+}
+
+const mirror = document.getElementById('visualizer-mirror');
+for(let i = 0; i < BAR_COUNT; i++){
+  const b   = document.createElement('div');
+  b.className = 'bar-m';
+  const dur = 0.35 + Math.random() * 0.75;
+  const x   = i / (BAR_COUNT - 1);
+  const mid = Math.abs(x - 0.5) * 2;
+  b.style.setProperty('--min', '2px');
+  b.style.setProperty('--max', (8 + mid * 14) + 'px');
+  b.style.setProperty('--d',   dur + 's');
+  b.style.animationDelay = (Math.random() * dur) + 's';
+  b.style.flex = (0.5 + mid * 0.9).toString();
+  mirror.appendChild(b);
+}
+
+// Lógica de Sincronización Real
+const audioEl = document.getElementById('main-audio');
+
+// Lógica de Renderizado Determinista
+window.IS_RENDERING = false; // Se activará vía Playwright si es necesario
+
+function seekTo(ms) {
+  // Encontrar el índice correcto para este tiempo
+  let newIdx = 0;
+  for (let i = 0; i < LYRICS.length; i++) {
+    if (LYRICS[i].startMs !== null && LYRICS[i].startMs <= ms) {
+      newIdx = i;
+    } else if (LYRICS[i].startMs === null) {
+      // Fallback para texto plano (estimación grosera)
+      if (i * 3000 <= ms) newIdx = i;
+    }
+  }
+  
+  if (currentIdx !== newIdx) {
+    currentIdx = newIdx;
+    updateLines();
+  }
+
+  // Sincronizar audio si existe (opcional en renderizado, usualmente el exporter lo pega después)
+  if (audioEl && audioEl.src && Math.abs(audioEl.currentTime - ms/1000) > 0.1) {
+    audioEl.currentTime = ms / 1000;
+  }
+
+  // Sincronizar animaciones de GSAP si las hay
+  if (window.gsap) {
+    gsap.globalTimeline.pause();
+    gsap.globalTimeline.seek(ms / 1000);
+  }
+}
+
+// Exponer para Playwright
+window.seekTo = seekTo;
+
+function startLogic() {
+  if (window.IS_RENDERING) return; // No auto-iniciar en modo grabación
+
+  // 1. La música arranca en T=0
+  if (audioEl && audioEl.src) {
+    audioEl.play().catch(e => console.log("Autoplay blocked. Click para sonar."));
+  }
+
+  // 2. Calculamos cuánto tiempo esperar para el primer verso
+  const firstLine = LYRICS[0];
+  const delayToFirst = (firstLine && firstLine.startMs !== null) ? firstLine.startMs : 0;
+
+  // 3. Programamos la entrada de la primera letra
+  setTimeout(() => {
+    advance();
+  }, delayToFirst);
+}
+
+// Pequeño margen para carga de assets
+setTimeout(startLogic, 500);
+</script>
+</body>
+</html>

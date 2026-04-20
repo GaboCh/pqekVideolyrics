@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Karaoke — Portrait</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://unpkg.com/splitting/dist/splitting.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/splitting/dist/splitting.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#080c12;font-family:'Inter',sans-serif}
+
+  :root{
+    --accent-r:100;--accent-g:170;--accent-b:255;
+    --accent:rgb(var(--accent-r),var(--accent-g),var(--accent-b));
+    --accent-dim:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.18);
+    --accent-glow:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.55);
+  }
+
+  /* ── Full blurred bg ── */
+  #bg-blur{
+    position:fixed;inset:-20px;z-index:0;
+    background-image:url('{{COVER_IMAGE}}');
+    background-size:cover;background-position:center;
+    filter:blur(22px) brightness(0.25) saturate(1.6);
+    transform:scale(1.12);
+    transition:filter 1.2s ease;
+  }
+  #bg-overlay{
+    position:fixed;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.5) 50%,rgba(0,0,0,0.85) 100%);
+  }
+
+  /* ── Layout ── */
+  #app{
+    position:relative;z-index:2;
+    width:100%;height:100%;
+    display:flex;flex-direction:column;
+    align-items:center;
+    padding:clamp(16px,3vh,36px) clamp(16px,4vw,40px) 0;
+  }
+
+  /* ── TOP: Cover art ── */
+  #cover-wrap{
+    flex-shrink:0;
+    display:flex;flex-direction:column;align-items:center;
+    gap:10px;
+    margin-bottom:clamp(12px,2.5vh,28px);
+  }
+  #cover-img{
+    width:min(180px,38vw,28vh);
+    height:min(180px,38vw,28vh);
+    object-fit:cover;
+    border-radius:6px;
+    box-shadow:
+      0 12px 40px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.1),
+      0 0 40px var(--accent-dim);
+    animation: cover-float 6s ease-in-out infinite;
+    transition: box-shadow 1s ease;
+  }
+  @keyframes cover-float {
+    0%   { transform: rotate(-2deg) translateY(0px)   scale(1);    }
+    25%  { transform: rotate(0deg)  translateY(-10px) scale(1.02); }
+    50%  { transform: rotate(2deg)  translateY(-4px)  scale(1.03); }
+    75%  { transform: rotate(0deg)  translateY(-12px) scale(1.02); }
+    100% { transform: rotate(-2deg) translateY(0px)   scale(1);    }
+  }
+
+  #cover-info{
+    text-align:center;
+  }
+  #cover-title{
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-size:clamp(1.4rem,5vw,2.6rem);
+    color:#fff;
+    line-height:1.1;
+    text-shadow:0 2px 16px rgba(0,0,0,0.8);
+  }
+  #cover-artist{
+    font-size:clamp(0.65rem,2vw,0.95rem);
+    color:rgba(255,255,255,0.5);
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    margin-top:4px;
+    position:relative;
+    display:inline-block;
+  }
+  #cover-artist::before, #cover-artist::after{
+    content:'';
+    position:absolute;top:50%;
+    width:12px;height:1px;
+    background:rgba(255,255,255,0.3);
+  }
+  #cover-artist::before{left:-20px}
+  #cover-artist::after{right:-20px}
+
+  /* ── MIDDLE: Lyrics ── */
+  #lyric-window{
+    flex:1;
+    width:100%;
+    overflow:hidden;
+    position:relative;
+    mask-image:linear-gradient(180deg,transparent 0%,black 10%,black 80%,transparent 100%);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 10%,black 80%,transparent 100%);
+  }
+  #lyric-scroll{
+    transition:transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    text-align:center;
+    padding:0 8px;
+  }
+
+  .lyric-line{
+    padding:clamp(5px,1vh,11px) 0;
+    font-size:clamp(1rem,4.2vw,1.7rem);
+    font-weight:600;
+    line-height:1.3;
+    letter-spacing:-0.01em;
+    color:rgba(255,255,255,0.14);
+    transition:color 0.4s ease, font-size 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    position:relative;
+    white-space:normal;
+    word-break:break-word;
+  }
+  .lyric-line.past{
+    color:rgba(255,255,255,0.28);
+    font-size:clamp(0.9rem,3.6vw,1.5rem);
+  }
+  .lyric-line.active{
+    color:rgba(255,255,255,0);
+    font-size:clamp(1.2rem,5vw,2rem);
+  }
+
+  /* ── Splitting: chars ── */
+  .lyric-line .char{
+    display:inline-block;
+    color:rgba(255,255,255,0.14);
+    transition:color 0.3s ease, text-shadow 0.3s ease;
+  }
+  .lyric-line.past .char{color:rgba(255,255,255,0.28)}
+  .lyric-line.active .char{
+    animation:
+      char-in    0.35s cubic-bezier(0.34,1.56,0.64,1) both,
+      char-shine 2.2s  linear infinite;
+    animation-delay:
+      calc(var(--char-index) * 0.04s),
+      calc(var(--char-index) * 0.06s);
+    -webkit-text-fill-color:transparent;
+    background:linear-gradient(
+      90deg,
+      rgba(255,255,255,0.4) 0%,
+      var(--accent) 40%,
+      #fff 50%,
+      var(--accent) 60%,
+      rgba(255,255,255,0.4) 100%
+    );
+    background-size:300% auto;
+    -webkit-background-clip:text;
+    background-clip:text;
+    filter:drop-shadow(0 0 8px var(--accent-glow));
+  }
+  @keyframes char-in{
+    0%  {opacity:0;transform:translateY(6px) scale(0.85)}
+    100%{opacity:1;transform:translateY(0)   scale(1)}
+  }
+  @keyframes char-shine{
+    0%  {background-position:200% center}
+    100%{background-position:-200% center}
+  }
+
+  /* Visualizador */
+  #visualizer-wrapper {
+    width: 100%;
+    position:relative;
+    flex-shrink:0;
+    margin-bottom: 20px;
+  }
+  #visualizer{
+    width:100%;
+    height:clamp(32px,6vh,56px);
+    display:flex;
+    align-items:flex-end;
+    gap:2px;
+    padding:8px 0 0px;
+    position:relative;
+    z-index:1;
+  }
+  #visualizer::before{
+    content:'';position:absolute;
+    bottom:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent-dim),transparent);
+  }
+  #visualizer::after{
+    content:'';position:absolute;
+    bottom:0;left:10%;right:10%;height:14px;
+    background:radial-gradient(ellipse 60% 100% at 50% 100%, var(--accent-dim), transparent);
+    pointer-events:none;
+  }
+  .bar{
+    flex:1;
+    border-radius:2px 2px 0 0;
+    animation:bar-pulse var(--d,0.8s) ease-in-out infinite alternate;
+    min-height:3px;
+    background:linear-gradient(
+      180deg,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.8) 0%,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.15) 100%
+    );
+    transition:background 1s ease;
+  }
+  .bar.accent{
+    background:linear-gradient(
+      180deg,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),1) 0%,
+      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.3) 100%
+    );
+    box-shadow:0 0 8px var(--accent-glow);
+  }
+  .bar:nth-child(even){opacity:0.75}
+  
+  @keyframes bar-pulse{
+    0%  {height:var(--min,4px);  opacity:0.3}
+    100%{height:var(--max,40px); opacity:0.95}
+  }
+
+  #visualizer-mirror{
+    height:clamp(10px,2vh,20px);
+    display:flex;align-items:flex-start;
+    gap:2px;
+    opacity:0.18;transform:scaleY(-1);
+    mask-image:linear-gradient(180deg,black 0%,transparent 100%);
+    -webkit-mask-image:linear-gradient(180deg,black 0%,transparent 100%);
+  }
+  .bar-m{
+    flex:1;border-radius:0 0 2px 2px;min-height:2px;
+    background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.5);
+    animation:bar-pulse var(--d,0.8s) ease-in-out infinite alternate;
+  }
+</style>
+</head>
+<body>
+<div id="bg-blur"></div>
+<div id="bg-overlay"></div>
+
+<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto"></audio>
+
+<div id="app">
+  <!-- Cover -->
+  <div id="cover-wrap">
+    <!-- crossorigin permite a ColorThief extraer colores si la imagen base64 lo requiere -->
+    <img id="cover-img" src="{{COVER_IMAGE}}" alt="cover" crossorigin="anonymous">
+    <div id="cover-info">
+      <div id="cover-title">{{SONG_NAME}}</div>
+      <div id="cover-artist">{{ARTIST_NAME}}</div>
+    </div>
+  </div>
+
+  <!-- Lyrics -->
+  <div id="lyric-window">
+    <div id="lyric-scroll"></div>
+  </div>
+
+  <!-- Visualizer -->
+  <div id="visualizer-wrapper">
+    <div id="visualizer"></div>
+    <div id="visualizer-mirror"></div>
+  </div>
+</div>
+
+<script>
+const LYRICS_RAW = [{{LYRICS_JSON}}];
+const LYRICS = typeof LYRICS_RAW[0] === 'string' 
+  ? LYRICS_RAW.map(text => ({ text: text, startMs: null, endMs: null })) 
+  : LYRICS_RAW;
+
+const ACTIVE_IDX = 2;
+let currentIdx = 0;
+let startTime = 0;
+
+const scrollEl = document.getElementById('lyric-scroll');
+const lineEls  = [];
+
+LYRICS.forEach((lineObj) => {
+  const el = document.createElement('div');
+  el.className = 'lyric-line';
+  el.dataset.text = lineObj.text;
+  el.textContent = lineObj.text;
+  scrollEl.appendChild(el);
+  lineEls.push(el);
+});
+
+Splitting({ target: '.lyric-line', by: 'chars' });
+
+// ── Color Thief ──────────────────────────────────────
+const coverImg = document.getElementById('cover-img');
+function applyAccent(r, g, b){
+  const boost = 1.3;
+  r = Math.min(255, Math.round(r * boost));
+  g = Math.min(255, Math.round(g * boost));
+  b = Math.min(255, Math.round(b * boost));
+  const root = document.documentElement;
+  root.style.setProperty('--accent-r', r);
+  root.style.setProperty('--accent-g', g);
+  root.style.setProperty('--accent-b', b);
+}
+function tryColorThief(){
+  try {
+    const ct = new ColorThief();
+    const [r,g,b] = ct.getColor(coverImg);
+    applyAccent(r,g,b);
+  } catch(e){}
+}
+coverImg.addEventListener('load', tryColorThief);
+if(coverImg.complete && coverImg.naturalWidth) tryColorThief();
+
+// ── Lines ────────────────────────────────────────────
+function updateLines(){
+  lineEls.forEach((el, i) => {
+    el.classList.remove('active','past');
+    if(i === currentIdx)    el.classList.add('active');
+    else if(i < currentIdx) el.classList.add('past');
+  });
+  const lineH  = lineEls[0] ? lineEls[0].offsetHeight : 36;
+  const offset = Math.max(0, currentIdx - ACTIVE_IDX) * lineH;
+  scrollEl.style.transform = `translateY(-${offset}px)`;
+}
+
+function getHoldMs(lineObj){
+  if(lineObj.startMs === null || lineObj.endMs === null) {
+    if(!lineObj.text || !lineObj.text.trim()) return 600;
+    return Math.max(1400, lineObj.text.length * 65);
+  }
+  return Math.max(0, lineObj.endMs - lineObj.startMs);
+}
+
+function advance(){
+  if(currentIdx >= LYRICS.length) return;
+  updateLines();
+  
+  const currentLine = LYRICS[currentIdx];
+  const nextLine = LYRICS[currentIdx + 1];
+
+  let hold = getHoldMs(currentLine);
+  
+  if(nextLine && nextLine.startMs !== null && currentLine.startMs !== null) {
+      hold = nextLine.startMs - currentLine.startMs;
+      hold = Math.max(10, hold);
+  }
+
+  setTimeout(() => { currentIdx++; advance(); }, hold);
+}
+
+// ── Visualizer ───────────────────────────────────────
+const viz = document.getElementById('visualizer');
+const BAR_COUNT = 44;
+function spectrumMax(i, total){
+  const x   = i / (total - 1);
+  const mid = Math.abs(x - 0.5) * 2;
+  return 12 + mid * 24 + Math.random() * 8;
+}
+for(let i = 0; i < BAR_COUNT; i++){
+  const b = document.createElement('div');
+  b.className = 'bar' + (i % 5 === 2 ? ' accent' : '');
+  const minH = 2 + Math.random() * 4;
+  const maxH = spectrumMax(i, BAR_COUNT);
+  const dur  = 0.3 + Math.random() * 0.6;
+  const x    = i / (BAR_COUNT - 1);
+  const mid  = Math.abs(x - 0.5) * 2;
+  b.style.setProperty('--min', minH + 'px');
+  b.style.setProperty('--max', maxH + 'px');
+  b.style.setProperty('--d',   dur  + 's');
+  b.style.animationDelay = (Math.random() * dur) + 's';
+  b.style.flex = (0.5 + mid * 1.5).toString();
+  viz.appendChild(b);
+}
+
+const mirror = document.getElementById('visualizer-mirror');
+for(let i = 0; i < BAR_COUNT; i++){
+  const b   = document.createElement('div');
+  b.className = 'bar-m';
+  const dur = 0.3 + Math.random() * 0.6;
+  const x   = i / (BAR_COUNT - 1);
+  const mid = Math.abs(x - 0.5) * 2;
+  b.style.setProperty('--min', '1px');
+  b.style.setProperty('--max', (4 + mid * 10) + 'px');
+  b.style.setProperty('--d',   dur + 's');
+  b.style.animationDelay = (Math.random() * dur) + 's';
+  b.style.flex = (0.5 + mid * 1.5).toString();
+  mirror.appendChild(b);
+}
+
+// Lógica de Renderizado Determinista
+window.IS_RENDERING = false; 
+
+function seekTo(ms) {
+  let newIdx = 0;
+  for (let i = 0; i < LYRICS.length; i++) {
+    if (LYRICS[i].startMs !== null && LYRICS[i].startMs <= ms) {
+      newIdx = i;
+    } else if (LYRICS[i].startMs === null) {
+      if (i * 3000 <= ms) newIdx = i;
+    }
+  }
+  
+  if (currentIdx !== newIdx) {
+    currentIdx = newIdx;
+    updateLines();
+  }
+
+  if (audioEl && audioEl.src && Math.abs(audioEl.currentTime - ms/1000) > 0.1) {
+    audioEl.currentTime = ms / 1000;
+  }
+
+  if (window.gsap) {
+    gsap.globalTimeline.pause();
+    gsap.globalTimeline.seek(ms / 1000);
+  }
+}
+
+window.seekTo = seekTo;
+
+function startLogic() {
+  if (window.IS_RENDERING) return;
+
+  // 1. La música arranca en T=0
+  if (audioEl && audioEl.src) {
+    audioEl.play().catch(e => console.log("Autoplay blocked. Click para sonar."));
+  }
+
+  // 2. Calculamos cuánto tiempo esperar para el primer verso (SRT)
+  const firstLine = LYRICS[0];
+  const delayToFirst = (firstLine && firstLine.startMs !== null) ? firstLine.startMs : 0;
+
+  // 3. Programamos la entrada de la primera letra
+  setTimeout(() => {
+    advance();
+  }, delayToFirst);
+}
+
+// Pequeño margen para carga de assets
+setTimeout(startLogic, 500);
+</script>
+</body>
+</html>

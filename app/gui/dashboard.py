@@ -68,6 +68,10 @@ class Dashboard:
                                     "🎵 Mix (Multi-estilo)",
                                     "📸 Karaoke + Foto (Landscape)",
                                     "📸 Karaoke + Foto (Portrait)",
+                                    "✍️ Letra a Mano (Landscape)",
+                                    "✍️ Letra a Mano (Portrait)",
+                                    "🎨 Ransom Collage (Landscape)",
+                                    "🎨 Ransom Collage (Portrait)",
                                 ],
                                 label="🎨 Template Visual",
                                 value="Space / Cosmos",
@@ -127,7 +131,9 @@ class Dashboard:
                     # Toggle visibility on mode change
                     def on_mode_change(mode, template):
                         is_template = "Template" in mode
-                        is_photo_template = is_template and "Karaoke + Foto" in template
+                        # Ahora verificamos si el template seleccionado está en nuestra lista de "templates con foto"
+                        from app.core.prompt_builder import PHOTO_TEMPLATES
+                        is_photo_template = is_template and template in PHOTO_TEMPLATES
                         return (
                             gr.update(visible=is_template),            # Template dropdown
                             gr.update(visible=not is_template),        # AI style dropdown
@@ -136,7 +142,8 @@ class Dashboard:
                         )
 
                     def on_template_change(mode, template):
-                        is_photo_template = ("Template" in mode) and ("Karaoke + Foto" in template)
+                        from app.core.prompt_builder import PHOTO_TEMPLATES
+                        is_photo_template = ("Template" in mode) and (template in PHOTO_TEMPLATES)
                         return gr.update(visible=is_photo_template)
 
                     use_template.change(fn=on_mode_change, inputs=[use_template, template_choice], outputs=[template_choice, ai_style, model_choice, cover_image_upload])

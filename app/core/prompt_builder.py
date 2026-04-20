@@ -17,12 +17,20 @@ STYLE_TO_TEMPLATE = {
     # Photo Karaoke — need cover image
     "📸 Karaoke + Foto (Landscape)": "photo_karaoke_landscape.html",
     "📸 Karaoke + Foto (Portrait)": "photo_karaoke_portrait.html",
+    "✍️ Letra a Mano (Landscape)": "handwritten_landscape.html",
+    "✍️ Letra a Mano (Portrait)": "handwritten_portrait.html",
+    "🎨 Ransom Collage (Landscape)": "ransom_note_landscape.html",
+    "🎨 Ransom Collage (Portrait)": "ransom_note_portrait.html",
 }
 
 # Styles that require a cover image upload
 PHOTO_TEMPLATES = {
     "📸 Karaoke + Foto (Landscape)",
     "📸 Karaoke + Foto (Portrait)",
+    "✍️ Letra a Mano (Landscape)",
+    "✍️ Letra a Mano (Portrait)",
+    "🎨 Ransom Collage (Landscape)",
+    "🎨 Ransom Collage (Portrait)",
 }
 
 

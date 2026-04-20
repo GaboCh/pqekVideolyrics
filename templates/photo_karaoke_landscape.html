@@ -7,245 +7,260 @@
 <script src="https://unpkg.com/splitting/dist/splitting.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/splitting/dist/splitting.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;1,300;1,600&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;overflow:hidden;background:#04060a;font-family:'Inter',sans-serif}
+:root{
+  --accent-r:120;--accent-g:180;--accent-b:255;
+  --accent:    rgb(var(--accent-r),var(--accent-g),var(--accent-b));
+  --accent-20: rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.20);
+  --accent-40: rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.40);
+  --accent-60: rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.60);
+  --bg:        #07080c;
+  --surface:   #0d1018;
+  --on-bg:     #f0f2f8;
+  --muted:     rgba(240,242,248,0.20);
+  --muted-hi:  rgba(240,242,248,0.38);
+  --radius-cover:20px;
+  --font-lyric:'Bebas Neue',sans-serif;
+  --font-meta: 'DM Sans',sans-serif;
+  --font-title:'Cormorant Garamond',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font-meta)}
 
-  :root{
-    --accent-r:100;--accent-g:170;--accent-b:255;
-    --accent:rgb(var(--accent-r),var(--accent-g),var(--accent-b));
-    --accent-dim:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.18);
-    --accent-glow:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.55);
-  }
+body::after{
+  content:'';position:fixed;inset:0;z-index:998;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  opacity:0.5;mix-blend-mode:soft-light;
+}
 
-  body::after{
-    content:'';position:fixed;inset:0;z-index:999;pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    opacity:0.35;mix-blend-mode:overlay;
-  }
+#app{display:flex;width:100%;height:100%}
 
-  #app{display:flex;width:100%;height:100%}
+/* ── THREE.JS GALAXY BACKGROUND ── */
+#three-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+}
+#app{position:relative;z-index:1;}
 
-  /* ── LEFT panel ── */
-  #cover-panel{
-    flex:0 0 45%;position:relative;
-    overflow:hidden;
-    display:flex;align-items:center;justify-content:center;
-  }
-  #cover-bg{
-    position:absolute;inset:-20px;
-    background-image:url('{{COVER_IMAGE}}');
-    background-size:cover;background-position:center;
-    filter:blur(28px) brightness(0.25) saturate(1.8);
-    transform:scale(1.15);
-    transition:filter 1.2s ease;
-  }
-  #cover-panel::after{
-    content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
-    background:linear-gradient(90deg,transparent 50%,rgba(4,6,10,0.7) 80%,rgba(4,6,10,1) 100%);
-  }
+/* ── COVER PANEL ── */
+#cover-panel{
+  flex:0 0 42%;position:relative;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+}
+#cover-bg{
+  position:absolute;inset:-30px;
+  background-image:url('{{COVER_IMAGE}}');
+  background-size:cover;background-position:center;
+  filter:blur(36px) brightness(0.2) saturate(2);
+  transform:scale(1.2);
+}
+#cover-panel::after{
+  content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:linear-gradient(105deg,transparent 40%,rgba(7,8,12,0.55) 70%,rgba(7,8,12,1) 100%);
+}
+#cover-glow{
+  position:absolute;z-index:1;width:70%;height:70%;border-radius:50%;
+  background:radial-gradient(circle,var(--accent-20) 0%,transparent 70%);
+  filter:blur(40px);
+  animation:glow-breathe 4s ease-in-out infinite alternate;
+}
+@keyframes glow-breathe{0%{transform:scale(0.9);opacity:0.6}100%{transform:scale(1.15);opacity:1}}
 
-  /* ── Cover image: float automático ── */
-  #cover-img{
-    position:relative;z-index:2;
-    width:min(320px,78%);height:min(320px,78%);
-    object-fit:cover;border-radius:16px;
-    box-shadow:
-      0 32px 80px rgba(0,0,0,0.85),
-      0 0 0 1px rgba(255,255,255,0.06),
-      0 0 80px var(--accent-dim);
-    animation: cover-float 6s ease-in-out infinite;
-    transition: box-shadow 1s ease;
-  }
-  @keyframes cover-float {
-    0%   { transform: rotate(-2deg) translateY(0px)   scale(1);    }
-    25%  { transform: rotate(0deg)  translateY(-10px) scale(1.02); }
-    50%  { transform: rotate(2deg)  translateY(-4px)  scale(1.03); }
-    75%  { transform: rotate(0deg)  translateY(-12px) scale(1.02); }
-    100% { transform: rotate(-2deg) translateY(0px)   scale(1);    }
-  }
+#cover-img{
+  position:relative;z-index:3;
+  width:min(300px,74%);height:min(300px,74%);
+  object-fit:cover;border-radius:var(--radius-cover);
+  box-shadow:0 2px 0 rgba(255,255,255,0.08),0 24px 60px rgba(0,0,0,0.9),0 0 0 1px rgba(255,255,255,0.05),0 0 80px var(--accent-20);
+  animation:cover-float 7s ease-in-out infinite;
+}
+@keyframes cover-float{
+  0%  {transform:rotate(-1.5deg) translateY(0px)   scale(1)}
+  30% {transform:rotate(0deg)    translateY(-11px) scale(1.02)}
+  55% {transform:rotate(1.5deg)  translateY(-5px)  scale(1.025)}
+  80% {transform:rotate(0deg)    translateY(-13px) scale(1.02)}
+  100%{transform:rotate(-1.5deg) translateY(0px)   scale(1)}
+}
+#cover-info{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  padding:clamp(18px,3.5vw,44px);
+  background:linear-gradient(0deg,rgba(7,8,12,0.97) 0%,rgba(7,8,12,0.6) 50%,transparent 100%);
+}
+#cover-title{
+  font-family:var(--font-title);font-style:italic;font-weight:300;
+  font-size:clamp(1.8rem,3.8vw,3.8rem);
+  color:var(--on-bg);line-height:1;letter-spacing:0.02em;
+  text-shadow:0 4px 32px rgba(0,0,0,1);
+}
+#cover-title::after{
+  content:'';display:block;width:40px;height:2px;margin-top:10px;
+  background:linear-gradient(90deg,var(--accent),transparent);border-radius:2px;
+}
+#cover-artist{
+  font-family:var(--font-meta);font-size:clamp(0.65rem,1.1vw,0.88rem);font-weight:400;
+  color:rgba(240,242,248,0.4);letter-spacing:0.32em;text-transform:uppercase;
+  margin-top:14px;display:flex;align-items:center;gap:10px;
+}
+#cover-artist::before{content:'';width:20px;height:1px;background:var(--accent-40);flex-shrink:0}
 
-  #cover-info{
-    position:absolute;bottom:0;left:0;right:0;z-index:5;
-    padding:clamp(16px,3vw,36px);
-    background:linear-gradient(0deg,rgba(4,6,10,0.95) 0%,rgba(4,6,10,0.5) 60%,transparent 100%);
-  }
-  #cover-title{
-    font-family:'Playfair Display',serif;font-style:italic;
-    font-size:clamp(1.8rem,4vw,3.6rem);
-    color:#fff;line-height:1.05;letter-spacing:-0.01em;
-    text-shadow:0 2px 30px rgba(0,0,0,0.9);
-  }
-  #cover-artist{
-    font-size:clamp(0.7rem,1.2vw,0.95rem);
-    color:rgba(255,255,255,0.45);
-    letter-spacing:0.3em;text-transform:uppercase;
-    margin-top:8px;display:flex;align-items:center;gap:8px;
-  }
-  #cover-artist::before{
-    content:'';width:18px;height:1px;
-    background:rgba(255,255,255,0.3);flex-shrink:0;
-  }
+/* ── LYRIC PANEL ── */
+#lyric-panel{
+  flex:1;display:flex;flex-direction:column;
+  background:rgba(13,16,24,0.78);
+  padding:clamp(28px,5vw,64px) clamp(24px,4vw,52px) 0;
+  overflow:hidden;position:relative;
+}
+#lyric-panel::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 65% 55% at 85% 35%,var(--accent-20) 0%,transparent 65%),
+    radial-gradient(ellipse 40% 30% at 20% 80%,var(--accent-20) 0%,transparent 60%);
+}
+#lyric-panel::after{
+  content:'';position:absolute;
+  left:0;top:10%;bottom:10%;width:1px;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--accent-40) 30%,var(--accent-40) 70%,transparent);
+}
 
-  /* ── RIGHT panel ── */
-  #lyric-panel{
-    flex:1;display:flex;flex-direction:column;
-    background:transparent;
-    padding:clamp(24px,4vw,52px) clamp(20px,3vw,44px) 0;
-    overflow:hidden;position:relative;
-  }
-  #lyric-panel::before{
-    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
-    background:
-      radial-gradient(ellipse 70% 50% at 80% 40%, var(--accent-dim) 0%, transparent 70%),
-      linear-gradient(180deg,#04060a 0%,#070b10 100%);
-    transition:background 1s ease;
-  }
+#lyric-window{
+  flex:1;overflow:hidden;position:relative;z-index:2;
+  mask-image:linear-gradient(180deg,transparent 0%,black 9%,black 78%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 9%,black 78%,transparent 100%);
+}
+#lyric-scroll{transition:transform 0.6s cubic-bezier(0.4,0,0.2,1)}
 
-  #lyric-window{
-    flex:1;overflow:hidden;position:relative;z-index:1;
-    mask-image:linear-gradient(180deg,transparent 0%,black 10%,black 80%,transparent 100%);
-    -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 10%,black 80%,transparent 100%);
-  }
-  #lyric-scroll{transition:transform 0.55s cubic-bezier(0.4,0,0.2,1)}
+/* ── LETRAS ── */
+.lyric-line{
+  padding:clamp(6px,1.1vh,13px) 0;
+  font-family:var(--font-lyric);
+  letter-spacing:0.06em;
+  font-size:clamp(1.4rem,3vw,3rem);
+  line-height:1.15;
+  color:var(--muted);
+  transition:color 0.5s ease, font-size 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  cursor:default;position:relative;
+  white-space:normal;word-break:break-word;
+}
+.lyric-line.past{
+  /* ── CAMBIO: past toma tinte del accent ── */
+  color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.30);
+  font-size:clamp(1.2rem,2.6vw,2.6rem);
+}
+.lyric-line.active{
+  font-size:clamp(1.8rem,3.8vw,3.8rem);
+  color:transparent;
+}
 
-  .lyric-line{
-    padding:clamp(7px,1.3vh,16px) 0;
-    font-size:clamp(1rem,2vw,1.85rem);
-    font-weight:600;line-height:1.4;letter-spacing:-0.01em;
-    color:rgba(255,255,255,0.14);
-    transition:color 0.4s ease,
-               font-size 0.35s cubic-bezier(0.34,1.56,0.64,1);
-    cursor:default;position:relative;
-    white-space:normal;word-break:break-word;
-  }
-  .lyric-line.past{
-    color:rgba(255,255,255,0.28);
-    font-size:clamp(0.95rem,1.85vw,1.7rem);
-  }
-  .lyric-line.active{
-    font-size:clamp(1.35rem,2.7vw,2.45rem);
-    color:rgba(255,255,255,0.12);
-  }
+/* Indicador lateral */
+.lyric-line.active::after{
+  content:'';position:absolute;left:-28px;top:50%;transform:translateY(-50%);
+  width:3px;height:55%;border-radius:4px;
+  background:linear-gradient(180deg,var(--accent),transparent);
+  box-shadow:0 0 16px var(--accent-60);
+  animation:side-glow 2s ease-in-out infinite alternate;
+}
+@keyframes side-glow{
+  0% {opacity:0.5;height:35%}100%{opacity:1;height:70%}
+}
 
-  /* Barra lateral activa */
-  .lyric-line.active::after{
-    content:'';
-    position:absolute;left:-18px;top:50%;
-    transform:translateY(-50%);
-    width:4px;height:60%;border-radius:4px;
-    background:linear-gradient(180deg, var(--accent), var(--accent-glow));
-    box-shadow:0 0 14px var(--accent-glow);
-    animation:bar-glow 1.5s ease-in-out infinite alternate;
-  }
-  @keyframes bar-glow{
-    0%{opacity:0.6;height:40%}
-    100%{opacity:1;height:75%}
-  }
+/* ── CHARS activos — ACCENT COLOR, no blanco puro ── */
+.lyric-line .char{
+  display:inline-block;
+  color:var(--muted);
+  transition:color 0.4s ease;
+  will-change:transform,opacity;
+}
+.lyric-line.past .char{
+  color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.30);
+}
 
-  /* ── Splitting: chars ── */
-  .lyric-line .char{
-    display:inline-block;
-    color:rgba(255,255,255,0.14);
-    transition:color 0.3s ease, text-shadow 0.3s ease;
-  }
-  .lyric-line.past .char{color:rgba(255,255,255,0.28)}
-  .lyric-line.active .char{
-    animation:
-      char-in    0.35s cubic-bezier(0.34,1.56,0.64,1) both,
-      char-shine 2.2s  linear infinite;
-    animation-delay:
-      calc(var(--char-index) * 0.04s),
-      calc(var(--char-index) * 0.06s);
-    -webkit-text-fill-color:transparent;
-    background:linear-gradient(
-      90deg,
-      rgba(255,255,255,0.4) 0%,
-      var(--accent) 40%,
-      #fff 50%,
-      var(--accent) 60%,
-      rgba(255,255,255,0.4) 100%
-    );
-    background-size:300% auto;
-    -webkit-background-clip:text;
-    background-clip:text;
-    filter:drop-shadow(0 0 8px var(--accent-glow));
-  }
-  @keyframes char-in{
-    0%  {opacity:0;transform:translateY(6px) scale(0.85)}
-    100%{opacity:1;transform:translateY(0)   scale(1)}
-  }
-  @keyframes char-shine{
-    0%  {background-position:200% center}
-    100%{background-position:-200% center}
-  }
+.lyric-line.active .char{
+  -webkit-text-fill-color:transparent;
+  /* Gradiente: accent→blanco→accent — vibrant, no lugubre */
+  background:linear-gradient(
+    90deg,
+    rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.75) 0%,
+    rgba(255,255,255,1)                                         35%,
+    rgba(255,255,255,1)                                         65%,
+    rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.75) 100%
+  );
+  background-size:200% auto;
+  -webkit-background-clip:text;
+  background-clip:text;
+  /* Glow en color accent en lugar de blanco neutro */
+  filter:drop-shadow(0 0 10px rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.55))
+         drop-shadow(0 0 2px  rgba(255,255,255,0.4));
+  animation:
+    char-pop   0.4s  cubic-bezier(0.34,1.56,0.64,1) both,
+    char-shine 3s    linear infinite;
+  animation-delay:
+    calc(var(--char-index) * 0.035s),
+    calc(var(--char-index) * 0.05s);
+}
+@keyframes char-pop{
+  0%  {opacity:0;transform:translateY(8px) scale(0.88)}
+  65% {transform:translateY(-2px) scale(1.03)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes char-shine{
+  0%  {background-position:180% center}
+  100%{background-position:-180% center}
+}
+.lyric-line.active .whitespace{
+  -webkit-text-fill-color:transparent;background:none;filter:none;
+}
 
-  /* ── Visualizador ── */
-  #visualizer{
-    height:clamp(50px,9vh,90px);
-    display:flex;align-items:flex-end;
-    gap:2px;padding:10px 0 16px;
-    flex-shrink:0;position:relative;z-index:1;
-  }
-  #visualizer::before{
-    content:'';position:absolute;
-    bottom:14px;left:0;right:0;height:1px;
-    background:linear-gradient(90deg,transparent,var(--accent-dim),transparent);
-  }
-  #visualizer::after{
-    content:'';position:absolute;
-    bottom:0;left:5%;right:5%;height:18px;
-    background:radial-gradient(ellipse 60% 100% at 50% 100%, var(--accent-dim), transparent);
-    pointer-events:none;
-  }
-  .bar{
-    flex:1;border-radius:3px 3px 0 0;min-height:3px;
-    animation:bar-pulse var(--d,0.8s) ease-in-out infinite alternate;
-    background:linear-gradient(
-      180deg,
-      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.8) 0%,
-      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.15) 100%
-    );
-    transition:background 1s ease;
-  }
-  .bar.accent{
-    background:linear-gradient(
-      180deg,
-      rgba(var(--accent-r),var(--accent-g),var(--accent-b),1) 0%,
-      rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.3) 100%
-    );
-    box-shadow:0 0 8px var(--accent-glow);
-  }
-  .bar:nth-child(even){opacity:0.75}
-  @keyframes bar-pulse{
-    0%  {height:var(--min,4px);  opacity:0.3}
-    100%{height:var(--max,40px); opacity:0.95}
-  }
+.lyric-line::before{
+  content:attr(data-num);
+  position:absolute;left:-44px;top:50%;transform:translateY(-50%);
+  font-family:var(--font-meta);font-size:0.58rem;font-weight:500;
+  color:rgba(240,242,248,0.07);letter-spacing:0.1em;
+  transition:color 0.4s ease;width:28px;text-align:right;
+}
+.lyric-line.active::before{color:var(--accent-40)}
 
-  /* Espejo */
-  #visualizer-mirror{
-    height:clamp(14px,2.5vh,28px);
-    display:flex;align-items:flex-start;
-    gap:2px;padding:0 0 4px;
-    flex-shrink:0;position:relative;z-index:1;
-    opacity:0.18;transform:scaleY(-1);
-    mask-image:linear-gradient(180deg,black 0%,transparent 100%);
-    -webkit-mask-image:linear-gradient(180deg,black 0%,transparent 100%);
-  }
-  .bar-m{
-    flex:1;border-radius:0 0 2px 2px;min-height:2px;
-    background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.5);
-    animation:bar-pulse var(--d,0.8s) ease-in-out infinite alternate;
-  }
+/* ── WAVEFORM ── */
+#viz-wrap{
+  flex-shrink:0;position:relative;z-index:2;
+  padding:10px 0 22px;display:flex;flex-direction:column;gap:8px;
+}
+#viz-divider{
+  width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-40) 30%,var(--accent-40) 70%,transparent);
+}
+#waveform-time{
+  display:flex;align-items:center;gap:12px;
+  font-family:var(--font-meta);font-size:0.72rem;font-weight:500;
+  color:rgba(240,242,248,0.35);letter-spacing:0.08em;
+}
+#time-current{min-width:30px;text-align:right;color:var(--accent);font-weight:600}
+#time-total{min-width:30px}
+#waveform-track{
+  flex:1;position:relative;
+  height:clamp(44px,7vh,68px);
+  cursor:pointer;border-radius:4px;overflow:hidden;
+  background:rgba(255,255,255,0.02);
+}
+#waveform-draw{position:absolute;inset:0;width:100%;height:100%}
+#waveform-progress{
+  position:absolute;top:0;left:0;width:0%;height:100%;
+  background:transparent;
+  border-right:2px solid var(--accent);
+  box-shadow:0 0 12px var(--accent-60);
+  pointer-events:none;z-index:2;
+  transition:border-color 0.8s ease, box-shadow 0.8s ease;
+}
 </style>
 </head>
 <body>
-<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto"></audio>
+<audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto" crossorigin="anonymous"></audio>
+
+<canvas id="three-bg"></canvas>
 
 <div id="app">
   <div id="cover-panel">
     <div id="cover-bg"></div>
+    <div id="cover-glow"></div>
     <img id="cover-img" src="{{COVER_IMAGE}}" alt="cover" crossorigin="anonymous">
     <div id="cover-info">
       <div id="cover-title">{{SONG_NAME}}</div>
@@ -257,197 +272,414 @@
     <div id="lyric-window">
       <div id="lyric-scroll"></div>
     </div>
-    <div id="visualizer"></div>
-    <div id="visualizer-mirror"></div>
+    <div id="viz-wrap">
+      <div id="viz-divider"></div>
+      <div id="waveform-time">
+        <span id="time-current">0:00</span>
+        <div id="waveform-track">
+          <div id="waveform-progress"></div>
+          <canvas id="waveform-draw"></canvas>
+        </div>
+        <span id="time-total">0:00</span>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 const LYRICS_RAW = [{{LYRICS_JSON}}];
-const LYRICS = typeof LYRICS_RAW[0] === 'string' 
-  ? LYRICS_RAW.map(text => ({ text: text, startMs: null, endMs: null })) 
+const LYRICS = typeof LYRICS_RAW[0] === 'string'
+  ? LYRICS_RAW.map(text => ({ text, startMs: null, endMs: null }))
   : LYRICS_RAW;
 
 const ACTIVE_IDX = 2;
-let currentIdx = 0;
-let startTime = 0; // tiempo de inicio de la reproducción
+let currentIdx   = 0;
+const audioEl    = document.getElementById('main-audio');
 
+/* ── DOM ── */
 const scrollEl = document.getElementById('lyric-scroll');
 const lineEls  = [];
-
-LYRICS.forEach((lineObj) => {
+LYRICS.forEach((lineObj, i) => {
   const el = document.createElement('div');
-  // Integración de Animate.css para la entrada alfanumérica
-  el.className    = 'lyric-line animate__animated animate__fadeInUp';
+  el.className    = 'lyric-line';
   el.dataset.text = lineObj.text;
+  el.dataset.num  = String(i + 1).padStart(2,'0');
   el.textContent  = lineObj.text;
   scrollEl.appendChild(el);
   lineEls.push(el);
 });
-
 Splitting({ target: '.lyric-line', by: 'chars' });
 
-// ── Color Thief ──────────────────────────────────────
+/* ── Color Thief — boost más agresivo para evitar colores apagados ── */
 const coverImg = document.getElementById('cover-img');
-function applyAccent(r, g, b){
-  const boost = 1.3;
+function applyAccent(r,g,b){
+  /* 1. Saturar: levantar el canal dominante */
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  const saturation = max === 0 ? 0 : (max - min) / max;
+
+  /* Si el color es muy desaturado (gris/blanco), forzar azul por defecto */
+  if(saturation < 0.18){ r=80; g=140; b=255; }
+
+  /* 2. Boost de luminosidad para que no quede oscuro */
+  const boost = max < 80 ? 3.8 : max < 130 ? 2.5 : max < 180 ? 1.8 : 1.3;
   r = Math.min(255, Math.round(r * boost));
   g = Math.min(255, Math.round(g * boost));
   b = Math.min(255, Math.round(b * boost));
+
+  /* 3. Floor mínimo de luminosidad */
+  const newMax = Math.max(r,g,b);
+  if(newMax < 170 && newMax > 0){
+    const lift = 170 / newMax;
+    r = Math.min(255, Math.round(r * lift));
+    g = Math.min(255, Math.round(g * lift));
+    b = Math.min(255, Math.round(b * lift));
+  }
+
   const root = document.documentElement;
-  root.style.setProperty('--accent-r', r);
-  root.style.setProperty('--accent-g', g);
-  root.style.setProperty('--accent-b', b);
+  root.style.setProperty('--accent-r', r || 120);
+  root.style.setProperty('--accent-g', g || 180);
+  root.style.setProperty('--accent-b', b || 255);
+  /* Actualizar colores de la galaxia */
+  if(window._updateGalaxyAccent) window._updateGalaxyAccent(r||120, g||180, b||255);
 }
 function tryColorThief(){
-  try {
-    const ct = new ColorThief();
-    const [r,g,b] = ct.getColor(coverImg);
-    applyAccent(r,g,b);
-  } catch(e){}
+  try{
+    const ct  = new ColorThief();
+    const pal = ct.getPalette(coverImg, 8);
+    /* Elegir el color más saturado del pallete */
+    let best = pal[0], bestScore = -1;
+    pal.forEach(([r,g,b]) => {
+      const max = Math.max(r,g,b), min = Math.min(r,g,b);
+      const sat = max === 0 ? 0 : (max-min)/max;
+      const lum = (max+min)/2/255;
+      /* Penalizar muy oscuros o muy claros */
+      const score = sat * (1 - Math.abs(lum - 0.5) * 1.4);
+      if(score > bestScore){ bestScore = score; best = [r,g,b]; }
+    });
+    applyAccent(...best);
+  }catch(e){}
 }
 coverImg.addEventListener('load', tryColorThief);
 if(coverImg.complete && coverImg.naturalWidth) tryColorThief();
 
-// ── Lines ────────────────────────────────────────────
+/* ── Letras ── */
 function updateLines(){
-  lineEls.forEach((el, i) => {
+  lineEls.forEach((el,i) => {
     el.classList.remove('active','past');
     if(i === currentIdx)    el.classList.add('active');
     else if(i < currentIdx) el.classList.add('past');
   });
-  const lineH  = lineEls[0] ? lineEls[0].offsetHeight : 40;
+  const lineH  = lineEls[0] ? lineEls[0].offsetHeight : 44;
   const offset = Math.max(0, currentIdx - ACTIVE_IDX) * lineH;
   scrollEl.style.transform = `translateY(-${offset}px)`;
 }
-
 function getHoldMs(lineObj){
-  // Si no tenemos SRT, adivinamos en base al texto
-  if(lineObj.startMs === null || lineObj.endMs === null) {
-    if(!lineObj.text || !lineObj.text.trim()) return 600;
+  if(lineObj.startMs === null){
+    if(!lineObj.text||!lineObj.text.trim()) return 600;
     return Math.max(1400, lineObj.text.length * 65);
   }
-  // Si tenemos SRT, calculamos duración de la frase
-  return Math.max(0, lineObj.endMs - lineObj.startMs);
+  return Math.max(10, (LYRICS[currentIdx+1]?.startMs ?? lineObj.startMs + 3000) - lineObj.startMs);
 }
-
 function advance(){
   if(currentIdx >= LYRICS.length) return;
   updateLines();
-  
-  const currentLine = LYRICS[currentIdx];
-  const nextLine = LYRICS[currentIdx + 1];
-
-  let hold = getHoldMs(currentLine);
-  
-  // Si tenemos tiempos SRT, en lugar de predecir cuánto dura la línea y parar,
-  // podríamos programar la siguiente línea EXACTAMENTE cuando su startMs lo indique.
-  if(nextLine && nextLine.startMs !== null && currentLine.startMs !== null) {
-      hold = nextLine.startMs - currentLine.startMs; // tiempo exacto hasta la siguiente
-      // Por si se superponen o hay márgenes raros
-      hold = Math.max(10, hold);
-  }
-
-  setTimeout(() => { currentIdx++; advance(); }, hold);
+  const hold = getHoldMs(LYRICS[currentIdx]);
+  window._lyricsTimeout = setTimeout(() => { currentIdx++; advance(); }, hold);
 }
 
-// ── Visualizer ───────────────────────────────────────
-const viz = document.getElementById('visualizer');
-const BAR_COUNT = 48;
-function spectrumMax(i, total){
-  const x   = i / (total - 1);
-  const mid = Math.abs(x - 0.5) * 2;
-  return 18 + mid * 30 + Math.random() * 16;
-}
-for(let i = 0; i < BAR_COUNT; i++){
-  const b = document.createElement('div');
-  b.className = 'bar' + (i % 6 === 2 || i % 6 === 5 ? ' accent' : '');
-  const minH = 3 + Math.random() * 6;
-  const maxH = spectrumMax(i, BAR_COUNT);
-  const dur  = 0.35 + Math.random() * 0.75;
-  const x    = i / (BAR_COUNT - 1);
-  const mid  = Math.abs(x - 0.5) * 2;
-  b.style.setProperty('--min', minH + 'px');
-  b.style.setProperty('--max', maxH + 'px');
-  b.style.setProperty('--d',   dur  + 's');
-  b.style.animationDelay = (Math.random() * dur) + 's';
-  b.style.flex = (0.5 + mid * 0.9).toString();
-  viz.appendChild(b);
-}
+/* ══════════════════════════════════════════════
+   VISUALIZADOR REAL-TIME — solo AnalyserNode
+   ══════════════════════════════════════════════ */
+const canvas  = document.getElementById('waveform-draw');
+const ctx2d   = canvas.getContext('2d');
+const progress= document.getElementById('waveform-progress');
+const timeCur = document.getElementById('time-current');
+const timeTot = document.getElementById('time-total');
+const track   = document.getElementById('waveform-track');
 
-const mirror = document.getElementById('visualizer-mirror');
-for(let i = 0; i < BAR_COUNT; i++){
-  const b   = document.createElement('div');
-  b.className = 'bar-m';
-  const dur = 0.35 + Math.random() * 0.75;
-  const x   = i / (BAR_COUNT - 1);
-  const mid = Math.abs(x - 0.5) * 2;
-  b.style.setProperty('--min', '2px');
-  b.style.setProperty('--max', (8 + mid * 14) + 'px');
-  b.style.setProperty('--d',   dur + 's');
-  b.style.animationDelay = (Math.random() * dur) + 's';
-  b.style.flex = (0.5 + mid * 0.9).toString();
-  mirror.appendChild(b);
+let audioDuration = 0;
+let audioCtx      = null;
+let analyserNode  = null;
+let freqData      = null;
+let canvasW = 0, canvasH = 0;
+
+function fmt(s){ return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; }
+
+function getAccent(alpha){
+  const st = getComputedStyle(document.documentElement);
+  return `rgba(${st.getPropertyValue('--accent-r').trim()},${st.getPropertyValue('--accent-g').trim()},${st.getPropertyValue('--accent-b').trim()},${alpha})`;
 }
 
-// Lógica de Sincronización Real
-const audioEl = document.getElementById('main-audio');
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  const DPR  = devicePixelRatio || 1;
+  canvasW = rect.width  * DPR;
+  canvasH = rect.height * DPR;
+  canvas.width  = canvasW;
+  canvas.height = canvasH;
+}
+window.addEventListener('resize', resizeCanvas);
 
-// Lógica de Renderizado Determinista
-window.IS_RENDERING = false; // Se activará vía Playwright si es necesario
+/* Iniciar AudioContext + AnalyserNode en primer gesto */
+function initAnalyser(){
+  if(audioCtx) { audioCtx.resume(); return; }
+  try{
+    audioCtx     = new (window.AudioContext || window.webkitAudioContext)();
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize               = 256;  /* 128 bins de frecuencia */
+    analyserNode.smoothingTimeConstant = 0.8;  /* suavizado para movimiento fluido */
+    const src = audioCtx.createMediaElementSource(audioEl);
+    src.connect(analyserNode);
+    analyserNode.connect(audioCtx.destination);
+    freqData = new Uint8Array(analyserNode.frequencyBinCount);
+    window._freqData = freqData; /* 128 valores 0-255 */
+  }catch(e){ console.warn('AnalyserNode error:', e); }
+}
 
-function seekTo(ms) {
-  // Encontrar el índice correcto para este tiempo
-  let newIdx = 0;
-  for (let i = 0; i < LYRICS.length; i++) {
-    if (LYRICS[i].startMs !== null && LYRICS[i].startMs <= ms) {
-      newIdx = i;
-    } else if (LYRICS[i].startMs === null) {
-      // Fallback para texto plano (estimación grosera)
-      if (i * 3000 <= ms) newIdx = i;
+/* Loop de dibujo — corre siempre */
+function drawLoop(){
+  requestAnimationFrame(drawLoop);
+  ctx2d.clearRect(0, 0, canvasW, canvasH);
+
+  /* Leer frecuencias del frame actual */
+  if(analyserNode && freqData) analyserNode.getByteFrequencyData(freqData);
+
+  const BARS    = 80;                          /* cantidad de barras visibles */
+  const barW    = canvasW / BARS;
+  const cx      = canvasH / 2;
+  const playedX = audioDuration ? (audioEl.currentTime / audioDuration) * canvasW : 0;
+
+  for(let i = 0; i < BARS; i++){
+    const x = i * barW;
+
+    /* Mapear barra → bin de frecuencia (solo bajos+medios, más vistoso) */
+    let energy = 0;
+    if(freqData){
+      const binIdx = Math.floor((i / BARS) * freqData.length * 0.7);
+      energy = freqData[binIdx] / 255; /* 0.0 → 1.0 */
     }
-  }
-  
-  if (currentIdx !== newIdx) {
-    currentIdx = newIdx;
-    updateLines();
+
+    const amp    = energy * cx * 0.92;
+    const played = x < playedX;
+
+    /* Barra arriba */
+    ctx2d.fillStyle = played ? getAccent(0.9) : 'rgba(255,255,255,0.13)';
+    ctx2d.beginPath();
+    ctx2d.roundRect(x + 0.5, cx - amp, Math.max(1, barW - 1.5), Math.max(2, amp), 1);
+    ctx2d.fill();
+
+    /* Reflejo abajo */
+    ctx2d.globalAlpha = 0.25;
+    ctx2d.fillStyle   = played ? getAccent(0.45) : 'rgba(255,255,255,0.05)';
+    ctx2d.beginPath();
+    ctx2d.roundRect(x + 0.5, cx + 2, Math.max(1, barW - 1.5), Math.max(1, amp * 0.35), 1);
+    ctx2d.fill();
+    ctx2d.globalAlpha = 1;
   }
 
-  // Sincronizar audio si existe (opcional en renderizado, usualmente el exporter lo pega después)
-  if (audioEl && audioEl.src && Math.abs(audioEl.currentTime - ms/1000) > 0.1) {
-    audioEl.currentTime = ms / 1000;
+  /* Línea de playhead */
+  if(playedX > 0 && playedX < canvasW){
+    ctx2d.strokeStyle = getAccent(0.95);
+    ctx2d.lineWidth   = 1.5 * (devicePixelRatio || 1);
+    ctx2d.shadowColor = getAccent(0.6);
+    ctx2d.shadowBlur  = 10;
+    ctx2d.beginPath(); ctx2d.moveTo(playedX,0); ctx2d.lineTo(playedX,canvasH); ctx2d.stroke();
+    ctx2d.shadowBlur  = 0;
   }
 
-  // Sincronizar animaciones de GSAP si las hay
-  if (window.gsap) {
-    gsap.globalTimeline.pause();
-    gsap.globalTimeline.seek(ms / 1000);
+  /* Actualizar tiempo y barra de progreso */
+  if(audioDuration){
+    progress.style.width = (audioEl.currentTime / audioDuration * 100) + '%';
+    timeCur.textContent  = fmt(audioEl.currentTime);
   }
 }
 
-// Exponer para Playwright
-window.seekTo = seekTo;
+/* Obtener duración cuando el audio carga */
+audioEl.addEventListener('loadedmetadata', () => {
+  audioDuration       = audioEl.duration;
+  timeTot.textContent = fmt(audioDuration);
+});
+audioEl.addEventListener('play', () => { initAnalyser(); });
 
-function startLogic() {
-  if (window.IS_RENDERING) return; // No auto-iniciar en modo grabación
+track.addEventListener('click', e => {
+  if(!audioDuration) return;
+  initAnalyser();
+  const rect = track.getBoundingClientRect();
+  audioEl.currentTime = ((e.clientX - rect.left) / rect.width) * audioDuration;
+});
 
-  // 1. La música arranca en T=0
-  if (audioEl && audioEl.src) {
-    audioEl.play().catch(e => console.log("Autoplay blocked. Click para sonar."));
+window.seekTo = function(ms){
+  let newIdx = 0;
+  for(let i = 0; i < LYRICS.length; i++){
+    const s = LYRICS[i].startMs;
+    if(s !== null && s <= ms) newIdx = i;
+    else if(s === null && i*3000 <= ms) newIdx = i;
+  }
+  if(currentIdx !== newIdx){ currentIdx = newIdx; updateLines(); }
+  audioEl.currentTime = ms / 1000;
+};
+
+/* ══════════════════════════════════════════════
+   THREE.JS GALAXY — v2: cámara reactiva + colores correctos
+   ══════════════════════════════════════════════ */
+(function(){
+  const threeCanvas = document.getElementById('three-bg');
+  const renderer    = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 100);
+  /* Posición inicial: ángulo bajo, vista cinematográfica de la galaxia */
+  camera.position.set(0, 1.8, 5.5);
+  camera.lookAt(0, 0, 0);
+
+  let points   = null;
+  let matSize  = 0.018;  /* tamaño base de partícula — controlado por audio */
+
+  function buildGalaxy(ar, ag, ab){
+    if(points){ points.geometry.dispose(); points.material.dispose(); scene.remove(points); }
+
+    const COUNT      = 9000;
+    const ARMS       = 3;
+    const RADIUS     = 5.5;
+    const SPIN       = 2.2;
+    const RANDOM_POW = 3.0;   /* alto = partículas más pegadas a los brazos */
+    const RAND_SCALE = 0.22;
+
+    const positions = new Float32Array(COUNT * 3);
+    const colors    = new Float32Array(COUNT * 3);
+
+    /* Colores: core brillante (blanco cálido) → brazo (accent) → borde (accent oscuro) */
+    const cCore  = new THREE.Color(1.0,  0.95, 0.85);                      /* blanco cálido centro */
+    const cMid   = new THREE.Color(ar/255, ag/255, ab/255);                 /* accent puro en brazo */
+    const cEdge  = new THREE.Color(ar/255*0.4, ag/255*0.4, ab/255*0.4);   /* accent oscuro borde */
+
+    for(let i = 0; i < COUNT; i++){
+      const i3 = i * 3;
+
+      /* Distribución de radio: √random → más densidad en zona media, no en centro */
+      const r   = Math.sqrt(Math.random()) * RADIUS;
+      const arm = (i % ARMS) / ARMS * Math.PI * 2;
+      const ang = arm + r * SPIN;
+
+      /* Randomness cae con la distancia al brazo */
+      const spread = RAND_SCALE * r;
+      const rx = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread;
+      const ry = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread * 0.25;
+      const rz = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread;
+
+      positions[i3]   = Math.cos(ang) * r + rx;
+      positions[i3+1] = ry;
+      positions[i3+2] = Math.sin(ang) * r + rz;
+
+      /* Color: 0→cCore (centro), 0.4→cMid (brazo), 1→cEdge (borde) */
+      const t = r / RADIUS;
+      const c = t < 0.4
+        ? cCore.clone().lerp(cMid, t / 0.4)
+        : cMid.clone().lerp(cEdge, (t - 0.4) / 0.6);
+
+      colors[i3]   = c.r;
+      colors[i3+1] = c.g;
+      colors[i3+2] = c.b;
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(colors,    3));
+
+    const mat = new THREE.PointsMaterial({
+      size:            matSize,
+      sizeAttenuation: true,
+      depthWrite:      false,
+      blending:        THREE.AdditiveBlending,
+      vertexColors:    true,
+      transparent:     true,
+      opacity:         0.9,
+    });
+
+    points = new THREE.Points(geo, mat);
+    scene.add(points);
   }
 
-  // 2. Calculamos cuánto tiempo esperar para el primer verso
-  const firstLine = LYRICS[0];
-  const delayToFirst = (firstLine && firstLine.startMs !== null) ? firstLine.startMs : 0;
+  buildGalaxy(120, 180, 255);
 
-  // 3. Programamos la entrada de la primera letra
-  setTimeout(() => {
-    advance();
-  }, delayToFirst);
+  window._updateGalaxyAccent = function(r,g,b){ buildGalaxy(r,g,b); };
+
+  /* ── Estado de cámara con lerp suave ── */
+  let rotY    = 0;
+  let clock   = 0;
+  let camZ    = 5.5, camX = 0, camY = 1.8;
+  let targetZ = 5.5, targetX = 0, targetY = 1.8;
+
+  function galaxyLoop(){
+    requestAnimationFrame(galaxyLoop);
+    clock += 0.01;
+
+    /* Leer energía del audio */
+    let bass = 0, mid = 0, treble = 0;
+    if(window._freqData){
+      const fd = window._freqData;
+      for(let i = 0;  i < 6;  i++) bass   += fd[i];
+      for(let i = 6;  i < 28; i++) mid    += fd[i];
+      for(let i = 28; i < 60; i++) treble += fd[i];
+      bass   /= (6  * 255);
+      mid    /= (22 * 255);
+      treble /= (32 * 255);
+    }
+
+    /* ── Rotación: velocidad base + boost en beat ── */
+    rotY += 0.0008 + bass * 0.008;
+    if(points) points.rotation.y = rotY;
+
+    /* ── Movimiento de cámara reactivo ── */
+    /* Zoom in/out: bass empuja la cámara hacia la galaxia */
+    targetZ = 5.5 + Math.sin(clock * 0.18) * 0.6 - bass * 2.2;
+
+    /* Sway lateral: mid mueve la cámara de lado */
+    targetX = Math.sin(clock * 0.22) * 0.4 + mid * 0.9;
+
+    /* Tilt vertical: treble sube/baja levemente */
+    targetY = 1.8 + Math.sin(clock * 0.13) * 0.25 + treble * 0.5;
+
+    /* Lerp suave para que no sea abrupto */
+    camZ += (targetZ - camZ) * 0.06;
+    camX += (targetX - camX) * 0.06;
+    camY += (targetY - camY) * 0.06;
+
+    camera.position.set(camX, camY, camZ);
+    camera.lookAt(0, 0, 0);
+
+    /* Tamaño de partícula pulsa levemente con el beat */
+    if(points) points.material.size = 0.016 + bass * 0.018 + mid * 0.008;
+
+    renderer.render(scene, camera);
+  }
+  galaxyLoop();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+})();
+
+
+
+window.IS_RENDERING = false;
+
+function init(){
+  resizeCanvas();
+  drawLoop();
+  if(!window.IS_RENDERING){
+    audioEl.play().catch(()=>{});
+    const delay = LYRICS[0]?.startMs ?? 0;
+    setTimeout(advance, delay);
+  }
 }
 
-// Pequeño margen para carga de assets
-setTimeout(startLogic, 500);
+setTimeout(init, 400);
 </script>
 </body>
 </html>
