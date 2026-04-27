@@ -120,11 +120,14 @@ class Dashboard:
                                     type="filepath"
                                 )
 
-                            gen_btn = gr.Button("✨ Generar", variant="primary", elem_id="gen-btn")
+                            with gr.Row():
+                                gen_btn = gr.Button("✨ Generar", variant="primary", elem_id="gen-btn")
+                                fast_record_btn = gr.Button("🎬 Grabación Rápida (Aislamiento)", variant="secondary")
                             status_text = gr.Markdown("Listo para generar...")
 
                         with gr.Column(scale=1):
                             html_preview = gr.HTML(label="Preview con Audio", value="<div style='height:400px; display:flex; align-items:center; justify-content:center; background:#1a1a1e; border-radius:10px; color:#555;'>El preview aparecerá aquí.</div>")
+                            fast_video_output = gr.Video(label="Captura Rápida Resultante", visible=False)
                             with gr.Accordion("Ver Código HTML (Depuración)", open=False):
                                 raw_html_output = gr.Code(language="html", label="Código Fuente", interactive=False)
 
@@ -204,6 +207,81 @@ class Dashboard:
                         fn=generate,
                         inputs=[srt_upload, lyrics, song, artist, use_template, template_choice, ai_style, model_choice, cover_image_upload, preview_format, audio_upload],
                         outputs=[html_preview, status_text, raw_html_output]
+                    )
+
+                    async def fast_record_with_progress(html_code, audio_file, format_ratio, progress=gr.Progress()):
+                        if not html_code:
+                            yield gr.update(visible=False), "❌ Primero genera el HTML"
+                            return
+                        
+                        safe_audio_path = None
+                        try:
+                            progress(0, desc="🚀 Iniciando entorno de grabación...")
+                            logger.info("Iniciando Grabación Rápida con escudo de archivos...")
+                            
+                            is_vertical = format_ratio == "Vertical TikTok (9:16)"
+                            w, h = (1280, 720) if not is_vertical else (720, 1280)
+                            
+                            # 1. Crear copia segura del audio
+                            progress(0.05, desc="🛡️ Asegurando ruta de audio...")
+                            import shutil
+                            import tempfile
+                            
+                            if audio_file:
+                                temp_dir = tempfile.gettempdir()
+                                safe_audio_path = os.path.join(temp_dir, f"temp_audio_{os.getpid()}.wav")
+                                try:
+                                    shutil.copy2(audio_file, safe_audio_path)
+                                except:
+                                    safe_audio_path = audio_file
+                            else:
+                                safe_audio_path = None
+
+                            # 2. Obtener duración
+                            progress(0.1, desc="🎵 Analizando duración...")
+                            audio_dur = get_audio_duration(safe_audio_path)
+                            duration = audio_dur if audio_dur and audio_dur > 0 else 15
+                            
+                            # 3. Grabación Real-Time
+                            progress(0.2, desc=f"🎬 Grabando video en tiempo real ({int(duration)}s)...")
+                            webm_path = await self.renderer.record_video_realtime(html_code, duration=duration, width=w, height=h, selector="body")
+                            
+                            if not webm_path:
+                                yield gr.update(visible=False), "❌ Error: No se pudo generar la grabación WebM"
+                                return
+
+                            # --- PREVIEW INMEDIATO ---
+                            yield gr.update(value=webm_path, visible=True), "👀 Grabación capturada. Procesando audio final..."
+                            
+                            # 4. Conversión MP4 + Audio
+                            progress(0.8, desc="⚙️ Procesando video final (FFmpeg)...")
+                            output_mp4 = "fast_export.mp4"
+                            result_path = await Exporter.convert_webm_to_mp4_async(webm_path, audio_path=safe_audio_path, output_path=output_mp4)
+                            
+                            if not result_path:
+                                yield gr.update(visible=False), "❌ Error en FFmpeg al unir audio y video."
+                                return
+                            
+                            # 5. Limpieza
+                            progress(0.95, desc="🧹 Limpiando...")
+                            if safe_audio_path and safe_audio_path != audio_file:
+                                try: os.remove(safe_audio_path)
+                                except: pass
+                                
+                            progress(1.0, desc="✅ ¡Video listo!")
+                            yield gr.update(value=output_mp4, visible=True), f"✅ ¡Exportación Exitosa! ({duration:.1f}s)"
+                        
+                        except Exception as e:
+                            logger.error(f"Error en fast_record_with_progress: {e}")
+                            if safe_audio_path and safe_audio_path != audio_file:
+                                try: os.remove(safe_audio_path)
+                                except: pass
+                            yield gr.update(visible=False), f"❌ Error: {str(e)}"
+
+                    fast_record_btn.click(
+                        fn=fast_record_with_progress,
+                        inputs=[raw_html_output, audio_upload, preview_format],
+                        outputs=[fast_video_output, status_text]
                     )
 
 

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Karaoke — Portrait Premium</title>
+<title>Karaoke — Portrait</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://unpkg.com/splitting/dist/splitting.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/splitting/dist/splitting.css">
@@ -21,7 +21,7 @@
   --on-bg:     #f0f2f8;
   --muted:     rgba(240,242,248,0.20);
   --muted-hi:  rgba(240,242,248,0.38);
-  --radius-cover:15px;
+  --radius-cover:20px;
   --font-lyric:'Bebas Neue',sans-serif;
   --font-meta: 'DM Sans',sans-serif;
   --font-title:'Cormorant Garamond',serif;
@@ -29,147 +29,215 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font-meta)}
 
+
 body::after{
   content:'';position:fixed;inset:0;z-index:998;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
-  opacity:0.4;mix-blend-mode:soft-light;
+  opacity:0.5;mix-blend-mode:soft-light;
 }
 
-#app{display:flex;flex-direction:column;width:100%;height:100%;position:relative;z-index:1}
+
+#app{display:flex;width:100%;height:100%;flex-direction:column}
+
 
 /* ── THREE.JS GALAXY BACKGROUND ── */
 #three-bg{
   position:fixed;inset:0;z-index:0;pointer-events:none;
 }
+#app{position:relative;z-index:1;}
 
-/* ── RESTART BUTTON ── */
-#btn-restart{
-  flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  width:32px;height:32px;border-radius:50%;
-  border:1.5px solid rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.35);
-  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.08);
-  cursor:pointer;transition:all 0.25s ease;
-  color:var(--accent);
-  outline:none;backdrop-filter:blur(6px);
-}
-#btn-restart:hover{
-  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.22);
-  border-color:var(--accent);
-  box-shadow:0 0 14px rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.4);
-  transform:scale(1.08);
-}
-#btn-restart:active{ transform:scale(0.94); }
-#btn-restart svg{ pointer-events:none; }
 
-/* ── COVER AREA ── */
+/* ── COVER PANEL ── */
 #cover-panel{
-  flex:0 0 45%;position:relative;
-  overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding-top:20px;
+  flex:0 0 45vh;position:relative; width:100%;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
 }
 #cover-bg{
   position:absolute;inset:-30px;
   background-image:url('{{COVER_IMAGE}}');
   background-size:cover;background-position:center;
-  filter:blur(40px) brightness(0.2) saturate(2);
+  filter:blur(36px) brightness(0.2) saturate(2);
   transform:scale(1.2);
 }
 #cover-panel::after{
-  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,transparent 60%,var(--bg) 100%);
+  content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:linear-gradient(180deg,transparent 40%,rgba(7,8,12,0.55) 70%,rgba(7,8,12,1) 100%);
 }
 #cover-glow{
-  position:absolute;z-index:1;width:60%;height:60%;border-radius:50%;
+  position:absolute;z-index:1;width:70%;height:70%;border-radius:50%;
   background:radial-gradient(circle,var(--accent-20) 0%,transparent 70%);
   filter:blur(40px);
-  animation:glow-breathe 5s ease-in-out infinite alternate;
+  animation:glow-breathe 4s ease-in-out infinite alternate;
 }
-@keyframes glow-breathe{0%{transform:scale(0.8);opacity:0.4}100%{transform:scale(1.1);opacity:1}}
+@keyframes glow-breathe{0%{transform:scale(0.9);opacity:0.6}100%{transform:scale(1.15);opacity:1}}
+
 
 #cover-img{
-  position:relative;z-index:2;
-  width:min(240px,55vw);height:min(240px,55vw);
+  position:relative;z-index:3;
+  width:min(300px,74vw);height:min(300px,74vw);
   object-fit:cover;border-radius:var(--radius-cover);
-  box-shadow:0 15px 40px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.05),0 0 60px var(--accent-20);
-  animation:cover-float 8s ease-in-out infinite;
+  box-shadow:0 2px 0 rgba(255,255,255,0.08),0 24px 60px rgba(0,0,0,0.9),0 0 0 1px rgba(255,255,255,0.05),0 0 80px var(--accent-20);
+  animation:cover-float 7s ease-in-out infinite;
 }
 @keyframes cover-float{
-  0%,100%{transform:translateY(0) rotate(-1deg)}
-  50%{transform:translateY(-15px) rotate(1deg)}
+  0%  {transform:rotate(-1.5deg) translateY(0px)   scale(1)}
+  30% {transform:rotate(0deg)    translateY(-11px) scale(1.02)}
+  55% {transform:rotate(1.5deg)  translateY(-5px)  scale(1.025)}
+  80% {transform:rotate(0deg)    translateY(-13px) scale(1.02)}
+  100%{transform:rotate(-1.5deg) translateY(0px)   scale(1)}
 }
-#cover-meta{
-  position:relative;z-index:3;margin-top:20px;text-align:center;padding:0 20px;
+#cover-info{
+  position:absolute;bottom:0;left:0;right:0;z-index:5;
+  padding:20px; text-align:center;
+  background:linear-gradient(0deg,rgba(7,8,12,0.97) 0%,rgba(7,8,12,0.6) 50%,transparent 100%);
 }
 #cover-title{
-  font-family:var(--font-title);font-style:italic;font-size:clamp(1.6rem,7vw,2.8rem);
-  color:var(--on-bg);line-height:1.1;text-shadow:0 4px 20px rgba(0,0,0,0.9);
+  font-family:var(--font-title);font-style:italic;font-weight:300;
+  font-size:clamp(1.6rem,6.5vw,3rem);
+  color:var(--on-bg);line-height:1;letter-spacing:0.02em;
+  text-shadow:0 4px 32px rgba(0,0,0,1);
+}
+#cover-title::after{
+  content:'';display:block;width:40px;height:2px;margin:10px auto 0;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);border-radius:2px;
 }
 #cover-artist{
-  font-size:clamp(0.6rem,2.8vw,0.85rem);color:rgba(240,242,248,0.4);
-  letter-spacing:0.25em;text-transform:uppercase;margin-top:10px;
-  display:flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--font-meta);font-size:clamp(0.65rem,3.5vw,0.85rem);font-weight:400;
+  color:rgba(240,242,248,0.4);letter-spacing:0.32em;text-transform:uppercase;
+  margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;
 }
-#cover-artist::before,#cover-artist::after{content:'';width:15px;height:1px;background:var(--accent-40)}
+#cover-artist::before, #cover-artist::after{content:'';width:20px;height:1px;background:var(--accent-40);flex-shrink:0}
 
-/* ── LYRIC AREA ── */
+
+/* ── LYRIC PANEL ── */
 #lyric-panel{
   flex:1;display:flex;flex-direction:column;
-  padding:0 clamp(20px,6vw,40px);overflow:hidden;position:relative;
+  background:rgba(13,16,24,0.78);
+  padding:20px clamp(24px,5vw,52px) 0;
+  overflow:hidden;position:relative;
 }
+#lyric-panel::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 65% 55% at 50% 35%,var(--accent-20) 0%,transparent 65%);
+}
+#lyric-panel::after{
+  content:'';position:absolute;
+  left:0;top:10%;bottom:10%;width:1px;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--accent-40) 30%,var(--accent-40) 70%,transparent);
+}
+
+
 #lyric-window{
   flex:1;overflow:hidden;position:relative;z-index:2;
-  mask-image:linear-gradient(180deg,transparent 0%,black 15%,black 80%,transparent 100%);
-  -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 15%,black 80%,transparent 100%);
+  mask-image:linear-gradient(180deg,transparent 0%,black 6%,black 78%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,black 6%,black 78%,transparent 100%);
 }
-#lyric-scroll{transition:transform 0.6s cubic-bezier(0.4,0,0.2,1);text-align:center}
+#lyric-scroll{transition:transform 0.6s cubic-bezier(0.4,0,0.2,1); text-align:center;}
 
+
+/* ── LETRAS ── */
 .lyric-line{
-  padding:14px 0;font-family:var(--font-lyric);letter-spacing:0.06em;
-  font-size:clamp(1.4rem,6.5vw,2.4rem);line-height:1.15;
-  color:var(--muted);transition:color 0.4s ease;position:relative;
+  padding:clamp(6px,1.1vh,13px) 0;
+  font-family:var(--font-lyric);
+  letter-spacing:0.06em;
+  font-size:clamp(1.4rem,7.5vw,2.8rem);
+  line-height:1.15;
+  color:var(--muted);
+  transition:color 0.5s ease, font-size 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  cursor:default;position:relative;
+  white-space:normal;word-break:break-word;
 }
-.lyric-line.past{color:var(--muted-hi);opacity:0.6}
-.lyric-line.active{color:transparent}
+.lyric-line.past{
+  /* ── CAMBIO: past toma tinte del accent ── */
+  color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.30);
+  font-size:clamp(1.2rem,6vw,2.4rem);
+}
+.lyric-line.active{
+  font-size:clamp(1.8rem,9vw,3.5rem);
+  color:transparent;
+}
 
-/* APPLE MUSIC SHIMMER */
-.lyric-line .char{display:inline-block;color:var(--muted);transition:color 0.4s ease}
-.lyric-line.past .char{color:var(--muted-hi)}
+
+/* Indicador lateral */
+.lyric-line.active::after{
+  display:none;
+}
+@keyframes side-glow{
+  0% {opacity:0.5;height:35%}100%{opacity:1;height:70%}
+}
+
+
+/* ── CHARS activos — ACCENT COLOR, no blanco puro ── */
+.lyric-line .char{
+  display:inline-block;
+  color:var(--muted);
+  transition:color 0.4s ease;
+  will-change:transform,opacity;
+}
+.lyric-line.past .char{
+  color:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.30);
+}
+
 
 .lyric-line.active .char{
   -webkit-text-fill-color:transparent;
-  background:linear-gradient(90deg,rgba(255,255,255,0.5) 0%,#fff 45%,#fff 55%,rgba(255,255,255,0.5) 100%);
-  background-size:200% auto;-webkit-background-clip:text;background-clip:text;
-  filter:drop-shadow(0 0 8px rgba(255,255,255,0.3));
-  animation:char-pop 0.4s ease-out both,char-shine 3s linear infinite;
-  animation-delay:calc(var(--char-index)*0.03s),calc(var(--char-index)*0.05s);
+  /* Gradiente: accent→blanco→accent — vibrant, no lugubre */
+  background:linear-gradient(
+    90deg,
+    rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.75) 0%,
+    rgba(255,255,255,1)                                         35%,
+    rgba(255,255,255,1)                                         65%,
+    rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.75) 100%
+  );
+  background-size:200% auto;
+  -webkit-background-clip:text;
+  background-clip:text;
+  /* Glow en color accent en lugar de blanco neutro */
+  filter:drop-shadow(0 0 10px rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.55))
+         drop-shadow(0 0 2px  rgba(255,255,255,0.4));
+  animation:
+    char-pop   0.4s  cubic-bezier(0.34,1.56,0.64,1) both,
+    char-shine 3s    linear infinite;
+  animation-delay:
+    calc(var(--char-index) * 0.035s),
+    calc(var(--char-index) * 0.05s);
 }
 @keyframes char-pop{
-  0%{opacity:0;transform:scale(0.8) translateY(10px)}
-  100%{opacity:1;transform:scale(1) translateY(0)}
+  0%  {opacity:0;transform:translateY(8px) scale(0.88)}
+  65% {transform:translateY(-2px) scale(1.03)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
 }
-@keyframes char-shine{0%{background-position:180% center}100%{background-position:-180% center}}
+@keyframes char-shine{
+  0%  {background-position:180% center}
+  100%{background-position:-180% center}
+}
+.lyric-line.active .whitespace{
+  -webkit-text-fill-color:transparent;background:none;filter:none;
+}
 
-/* ── WAVEFORM AREA ── */
-#viz-container{
-  flex-shrink:0;padding:10px 0 30px;display:flex;flex-direction:column;gap:10px;
+
+.lyric-line::before{
+  display:none;
+}
+
+
+/* ── WAVEFORM ── */
+#viz-wrap{
+  flex-shrink:0;position:relative;z-index:2;
+  padding:10px 0 22px;display:flex;flex-direction:column;gap:8px;
+}
+#viz-divider{
+  width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-40) 30%,var(--accent-40) 70%,transparent);
 }
 #waveform-time{
-  display:flex;align-items:center;gap:12px;font-family:var(--font-meta);
-  font-size:0.75rem;font-weight:500;color:rgba(240,242,248,0.35);letter-spacing:0.05em;
+  display:flex;align-items:center;gap:12px;
+  font-family:var(--font-meta);font-size:0.72rem;font-weight:500;
+  color:rgba(240,242,248,0.35);letter-spacing:0.08em;
 }
-#time-current{min-width:32px;text-align:right;color:var(--accent)}
-#time-total{min-width:32px}
-#waveform-track{
-  flex:1;position:relative;height:50px;cursor:pointer;
-  background:rgba(255,255,255,0.02);border-radius:6px;overflow:hidden;
-}
-#waveform-draw{position:absolute;inset:0;width:100%;height:100%}
-#waveform-progress{
-  position:absolute;top:0;left:0;width:0%;height:100%;
-  background:transparent;border-right:2px solid var(--accent);
-  box-shadow:0 0 15px var(--accent-60);pointer-events:none;z-index:2;
-}
+#time-current{min-width:30px;text-align:right;color:var(--accent);font-weight:600}
+#time-total{min-width:30px; margin-right: 8px;}
 
 #visual-selector {
   background: rgba(255,255,255,0.06);
@@ -196,32 +264,117 @@ body::after{
   background: #111;
   color: #fff;
 }
+#waveform-track{
+  flex:1;position:relative;
+  height:clamp(44px,7vh,68px);
+  cursor:pointer;border-radius:4px;overflow:hidden;
+  background:rgba(255,255,255,0.02);
+}
+#waveform-draw{position:absolute;inset:0;width:100%;height:100%}
+#waveform-progress{
+  position:absolute;top:0;left:0;width:0%;height:100%;
+  background:transparent;
+  border-right:2px solid var(--accent);
+  box-shadow:0 0 12px var(--accent-60);
+  pointer-events:none;z-index:2;
+  transition:border-color 0.8s ease, box-shadow 0.8s ease;
+}
 
+
+/* ── RESTART BUTTON ── */
+#btn-restart{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.35);
+  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.08);
+  cursor:pointer;transition:all 0.25s ease;
+  color:var(--accent);font-size:0.95rem;
+  outline:none;backdrop-filter:blur(6px);
+}
+#btn-restart:hover{
+  background:rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.22);
+  border-color:var(--accent);
+  box-shadow:0 0 14px rgba(var(--accent-r),var(--accent-g),var(--accent-b),0.4);
+  transform:scale(1.08);
+}
+#btn-restart:active{transform:scale(0.92);background:var(--accent-40)}
+
+/* ── SYNC PANEL ── */
+#sync-panel {
+  position: fixed; bottom: 85px; left: 15px; right: 15px; z-index: 1000;
+  padding: 20px; border-radius: 12px;
+  background: rgba(13, 16, 24, 0.95); backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  display: none; flex-direction: column; gap: 15px;
+  transform: translateY(100px); opacity:0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#sync-panel.open { transform: translateY(0); opacity:1; display:flex; pointer-events:all; }
+#sync-toggle-btn {
+  background: var(--accent-20); border: 1px solid var(--accent-40); color: var(--accent);
+  padding: 8px 16px; border-radius: 10px; font-size: 0.7rem; font-weight: 700;
+  cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em;
+  transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+#sync-toggle-btn:hover { background: var(--accent-40); color: #fff; }
+#sync-toggle-btn.active { background: var(--accent); color: #000; }
+
+#sync-now-btn {
+  background: var(--accent); color: #000; border: none;
+  padding: 18px; border-radius: 10px; font-weight: 800; font-size: 1.1rem;
+  cursor: pointer; transition: transform 0.1s, background 0.3s;
+  box-shadow: 0 0 20px var(--accent-40);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+#sync-now-btn:active { transform: scale(0.94); background: #fff; }
+
+.sync-nudge-row { display: flex; gap: 6px; }
+.sync-nudge-btn {
+  flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: #fff; padding: 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
+}
+.sync-nudge-btn:hover { background: rgba(255,255,255,0.12); }
+
+#sync-current-label { font-size: 0.6rem; color: var(--muted-hi); text-transform: uppercase; }
+#sync-current-text { 
+  font-size: 0.85rem; color: #fff; font-weight: 500; 
+  height: 44px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+
+#sync-copy-btn {
+  background: transparent; border: 1px dashed var(--accent-40); color: var(--accent);
+  padding: 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; margin-top: 5px;
+}
+#sync-copy-btn:hover { border-style: solid; background: var(--accent-20); }
 #btn-restart svg{ pointer-events:none; }
-
 </style>
 </head>
 <body>
 <audio id="main-audio" src="{{AUDIO_DATA}}" preload="auto" crossorigin="anonymous"></audio>
 
+
 <canvas id="three-bg"></canvas>
+
 
 <div id="app">
   <div id="cover-panel">
     <div id="cover-bg"></div>
     <div id="cover-glow"></div>
     <img id="cover-img" src="{{COVER_IMAGE}}" alt="cover" crossorigin="anonymous">
-    <div id="cover-meta">
+    <div id="cover-info">
       <div id="cover-title">{{SONG_NAME}}</div>
       <div id="cover-artist">{{ARTIST_NAME}}</div>
     </div>
   </div>
 
+
   <div id="lyric-panel">
     <div id="lyric-window">
       <div id="lyric-scroll"></div>
     </div>
-    <div id="viz-container">
+    <div id="viz-wrap">
+      <div id="viz-divider"></div>
       <div id="waveform-time">
         <span id="time-current">0:00</span>
         <div id="waveform-track">
@@ -229,20 +382,31 @@ body::after{
           <canvas id="waveform-draw"></canvas>
         </div>
         <span id="time-total">0:00</span>
+      <div id="btn-row">
         <select id="visual-selector" title="Visualizador">
           <option value="galaxy">Galaxia</option>
           <option value="heart">Corazón</option>
         </select>
         <button id="btn-restart" title="Reiniciar canción" aria-label="Reiniciar">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"/>
             <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
           </svg>
         </button>
+        <button id="sync-toggle-btn">Sincronizar</button>
       </div>
+  <div id="sync-panel">
+    <div id="sync-current-label">Frase Actual:</div>
+    <div id="sync-current-text">--</div>
+    <button id="sync-now-btn">¡AHORA!</button>
+    <div class="sync-nudge-row">
+      <button class="sync-nudge-btn" id="sync-nudge-back">-0.1s</button>
+      <button class="sync-nudge-btn" id="sync-nudge-next">+0.1s</button>
     </div>
+    <button id="sync-copy-btn">Copiar SRT Corregido</button>
   </div>
 </div>
+
 
 <script>
 const LYRICS_RAW = [{{LYRICS_JSON}}];
@@ -250,50 +414,76 @@ const LYRICS = typeof LYRICS_RAW[0] === 'string'
   ? LYRICS_RAW.map(text => ({ text, startMs: null, endMs: null }))
   : LYRICS_RAW;
 
+
 const ACTIVE_IDX = 2;
 let currentIdx   = 0;
 const audioEl    = document.getElementById('main-audio');
 
+
+/* ── DOM ── */
 const scrollEl = document.getElementById('lyric-scroll');
 const lineEls  = [];
 LYRICS.forEach((lineObj, i) => {
   const el = document.createElement('div');
-  el.className = 'lyric-line';
+  el.className    = 'lyric-line';
+  el.dataset.text = lineObj.text;
+  el.dataset.num  = String(i + 1).padStart(2,'0');
   el.textContent  = lineObj.text;
   scrollEl.appendChild(el);
   lineEls.push(el);
 });
 Splitting({ target: '.lyric-line', by: 'chars' });
 
-/* ── Color Engine ── */
+
+/* ── Color Thief — boost más agresivo para evitar colores apagados ── */
 const coverImg = document.getElementById('cover-img');
 function applyAccent(r,g,b){
-  const max = Math.max(r,g,b);
-  const boost = max < 60 ? 3.5 : max < 100 ? 2.8 : max < 150 ? 2.0 : 1.5;
+  /* 1. Saturar: levantar el canal dominante */
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  const saturation = max === 0 ? 0 : (max - min) / max;
+
+
+  /* Si el color es muy desaturado (gris/blanco), forzar azul por defecto */
+  if(saturation < 0.18){ r=80; g=140; b=255; }
+
+
+  /* 2. Boost de luminosidad para que no quede oscuro */
+  const boost = max < 80 ? 3.8 : max < 130 ? 2.5 : max < 180 ? 1.8 : 1.3;
   r = Math.min(255, Math.round(r * boost));
   g = Math.min(255, Math.round(g * boost));
   b = Math.min(255, Math.round(b * boost));
+
+
+  /* 3. Floor mínimo de luminosidad */
   const newMax = Math.max(r,g,b);
-  if(newMax < 160 && newMax > 0){
-    const lift = 160 / newMax;
+  if(newMax < 170 && newMax > 0){
+    const lift = 170 / newMax;
     r = Math.min(255, Math.round(r * lift));
     g = Math.min(255, Math.round(g * lift));
     b = Math.min(255, Math.round(b * lift));
   }
+
+
   const root = document.documentElement;
-  root.style.setProperty('--accent-r', r||120);
-  root.style.setProperty('--accent-g', g||180);
-  root.style.setProperty('--accent-b', b||255);
+  root.style.setProperty('--accent-r', r || 120);
+  root.style.setProperty('--accent-g', g || 180);
+  root.style.setProperty('--accent-b', b || 255);
+  /* Actualizar colores de la galaxia */
+  if(window._updateGalaxyAccent) window._updateGalaxyAccent(r||120, g||180, b||255);
 }
 function tryColorThief(){
   try{
-    const ct = new ColorThief();
-    const pal = ct.getPalette(coverImg, 5);
-    let best = pal[0], bestSat = 0;
+    const ct  = new ColorThief();
+    const pal = ct.getPalette(coverImg, 8);
+    /* Elegir el color más saturado del pallete */
+    let best = pal[0], bestScore = -1;
     pal.forEach(([r,g,b]) => {
-      const max=Math.max(r,g,b), min=Math.min(r,g,b);
-      const sat=max===0?0:(max-min)/max;
-      if(sat > bestSat){ bestSat=sat; best=[r,g,b]; }
+      const max = Math.max(r,g,b), min = Math.min(r,g,b);
+      const sat = max === 0 ? 0 : (max-min)/max;
+      const lum = (max+min)/2/255;
+      /* Penalizar muy oscuros o muy claros */
+      const score = sat * (1 - Math.abs(lum - 0.5) * 1.4);
+      if(score > bestScore){ bestScore = score; best = [r,g,b]; }
     });
     applyAccent(...best);
   }catch(e){}
@@ -301,259 +491,247 @@ function tryColorThief(){
 coverImg.addEventListener('load', tryColorThief);
 if(coverImg.complete && coverImg.naturalWidth) tryColorThief();
 
-/* ── Sync ── */
+
+/* ── Letras ── */
 function updateLines(){
   lineEls.forEach((el,i) => {
     el.classList.remove('active','past');
-    if(i === currentIdx) el.classList.add('active');
+    if(i === currentIdx)    el.classList.add('active');
     else if(i < currentIdx) el.classList.add('past');
   });
   const lineH  = lineEls[0] ? lineEls[0].offsetHeight : 60;
-  const offset = Math.max(0, currentIdx - ACTIVE_IDX) * lineH;
+  const offset = Math.max(0, currentIdx - 2) * lineH;
   scrollEl.style.transform = `translateY(-${offset}px)`;
+}
+function getHoldMs(lineObj){
+  if(lineObj.startMs === null){
+    if(!lineObj.text||!lineObj.text.trim()) return 600;
+    return Math.max(1400, lineObj.text.length * 65);
+  }
+  return Math.max(10, (LYRICS[currentIdx+1]?.startMs ?? lineObj.startMs + 3000) - lineObj.startMs);
 }
 function advance(){
   if(currentIdx >= LYRICS.length) return;
   updateLines();
-  const line = LYRICS[currentIdx];
-  const hold = line.startMs === null 
-    ? Math.max(1400, line.text.length * 68) 
-    : Math.max(10, (LYRICS[currentIdx+1]?.startMs ?? line.startMs + 3000) - line.startMs);
+  const hold = getHoldMs(LYRICS[currentIdx]);
   window._lyricsTimeout = setTimeout(() => { currentIdx++; advance(); }, hold);
 }
 
-/* ── Wave Engine ── */
-const canvas = document.getElementById('waveform-draw');
-const ctx2d  = canvas.getContext('2d');
-const progress = document.getElementById('waveform-progress');
-const timeCur  = document.getElementById('time-current');
-const timeTot  = document.getElementById('time-total');
-const track    = document.getElementById('waveform-track');
-let audioDuration = 0, waveformData = null;
+
+/* ══════════════════════════════════════════════
+   VISUALIZADOR REAL-TIME — solo AnalyserNode
+   ══════════════════════════════════════════════ */
+const canvas  = document.getElementById('waveform-draw');
+const ctx2d   = canvas.getContext('2d');
+const progress= document.getElementById('waveform-progress');
+const timeCur = document.getElementById('time-current');
+const timeTot = document.getElementById('time-total');
+const track   = document.getElementById('waveform-track');
+
+
+let audioDuration = 0;
+let audioCtx      = null;
+let analyserNode  = null;
+let freqData      = null;
+let canvasW = 0, canvasH = 0;
+
 
 function fmt(s){ return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; }
+
+
 function getAccent(alpha){
-  const s = getComputedStyle(document.documentElement);
-  return `rgba(${s.getPropertyValue('--accent-r').trim()},${s.getPropertyValue('--accent-g').trim()},${s.getPropertyValue('--accent-b').trim()},${alpha})`;
+  const st = getComputedStyle(document.documentElement);
+  return `rgba(${st.getPropertyValue('--accent-r').trim()},${st.getPropertyValue('--accent-g').trim()},${st.getPropertyValue('--accent-b').trim()},${alpha})`;
 }
 
-function drawWaveform(){
-  if(!waveformData) return;
-  const rect = canvas.getBoundingClientRect();
-  const DPR = window.devicePixelRatio||1;
-  const W = rect.width*DPR, H = rect.height*DPR;
-  canvas.width = W; canvas.height = H;
-  ctx2d.clearRect(0,0,W,H);
-  const samples = waveformData.length, barW = W/samples, cx = H/2;
-  const playedX = audioDuration ? (audioEl.currentTime/audioDuration)*W : 0;
 
-  for(let i=0; i<samples; i++){
-    const x=i*barW, amp=waveformData[i]*cx*0.85, played=x<playedX;
-    ctx2d.fillStyle = played ? getAccent(0.9) : 'rgba(255,255,255,0.15)';
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  const DPR  = devicePixelRatio || 1;
+  canvasW = rect.width  * DPR;
+  canvasH = rect.height * DPR;
+  canvas.width  = canvasW;
+  canvas.height = canvasH;
+}
+window.addEventListener('resize', resizeCanvas);
+
+
+/* Iniciar AudioContext + AnalyserNode en primer gesto */
+function initAnalyser(){
+  if(audioCtx) { audioCtx.resume(); return; }
+  try{
+    audioCtx     = new (window.AudioContext || window.webkitAudioContext)();
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize               = 256;  /* 128 bins de frecuencia */
+    analyserNode.smoothingTimeConstant = 0.8;  /* suavizado para movimiento fluido */
+    const src = audioCtx.createMediaElementSource(audioEl);
+    src.connect(analyserNode);
+    analyserNode.connect(audioCtx.destination);
+    freqData = new Uint8Array(analyserNode.frequencyBinCount);
+    window._freqData    = freqData;        /* datos de frecuencia compartidos */
+    window._analyserNode = analyserNode;   /* expuesto para que la galaxia lea por sí misma */
+  }catch(e){ console.warn('AnalyserNode error:', e); }
+}
+
+
+/* Loop de dibujo — corre siempre */
+function drawLoop(){
+  requestAnimationFrame(drawLoop);
+  ctx2d.clearRect(0, 0, canvasW, canvasH);
+
+
+  /* Leer frecuencias del frame actual */
+  if(analyserNode && freqData) analyserNode.getByteFrequencyData(freqData);
+
+
+  const BARS    = 80;                          /* cantidad de barras visibles */
+  const barW    = canvasW / BARS;
+  const cx      = canvasH / 2;
+  const playedX = audioDuration ? (audioEl.currentTime / audioDuration) * canvasW : 0;
+
+
+  for(let i = 0; i < BARS; i++){
+    const x = i * barW;
+
+
+    /* Mapear barra → bin de frecuencia (solo bajos+medios, más vistoso) */
+    let energy = 0;
+    if(freqData){
+      const binIdx = Math.floor((i / BARS) * freqData.length * 0.7);
+      energy = freqData[binIdx] / 255; /* 0.0 → 1.0 */
+    }
+
+
+    const amp    = energy * cx * 0.92;
+    const played = x < playedX;
+
+
+    /* Barra arriba */
+    ctx2d.fillStyle = played ? getAccent(0.9) : 'rgba(255,255,255,0.13)';
     ctx2d.beginPath();
-    ctx2d.roundRect(x+0.5, cx-amp/2, Math.max(1, barW-1.5), amp, 1);
+    ctx2d.roundRect(x + 0.5, cx - amp, Math.max(1, barW - 1.5), Math.max(2, amp), 1);
     ctx2d.fill();
+
+
+    /* Reflejo abajo */
+    ctx2d.globalAlpha = 0.25;
+    ctx2d.fillStyle   = played ? getAccent(0.45) : 'rgba(255,255,255,0.05)';
+    ctx2d.beginPath();
+    ctx2d.roundRect(x + 0.5, cx + 2, Math.max(1, barW - 1.5), Math.max(1, amp * 0.35), 1);
+    ctx2d.fill();
+    ctx2d.globalAlpha = 1;
+  }
+
+
+  /* Línea de playhead */
+  if(playedX > 0 && playedX < canvasW){
+    ctx2d.strokeStyle = getAccent(0.95);
+    ctx2d.lineWidth   = 1.5 * (devicePixelRatio || 1);
+    ctx2d.shadowColor = getAccent(0.6);
+    ctx2d.shadowBlur  = 10;
+    ctx2d.beginPath(); ctx2d.moveTo(playedX,0); ctx2d.lineTo(playedX,canvasH); ctx2d.stroke();
+    ctx2d.shadowBlur  = 0;
+  }
+
+
+  /* Actualizar tiempo y barra de progreso */
+  if(audioDuration){
+    progress.style.width = (audioEl.currentTime / audioDuration * 100) + '%';
+    timeCur.textContent  = fmt(audioEl.currentTime);
   }
 }
 
-async function buildWaveform(arrayBuffer){
-  try{
-    const tmpCtx = new AudioContext();
-    const decoded = await tmpCtx.decodeAudioData(arrayBuffer);
-    await tmpCtx.close();
-    audioDuration = decoded.duration;
-    timeTot.textContent = fmt(audioDuration);
-    const rawData = decoded.getChannelData(0);
-    const rect = canvas.getBoundingClientRect();
-    const samples = Math.floor((rect.width||300)/3.5);
-    const blockSize = Math.floor(rawData.length/samples);
-    const filtered = [];
-    for(let i=0; i<samples; i++){
-      let sum=0; for(let j=0; j<blockSize; j++) sum+=Math.abs(rawData[i*blockSize+j]);
-      filtered.push(sum/blockSize);
-    }
-    const maxVal = Math.max(...filtered)||1;
-    waveformData = filtered.map(v => v/maxVal);
-    requestAnimationFrame(drawWaveform);
-  }catch(e){}
-}
 
-async function autoInitWaveform(){
-  if(!audioEl.src) return;
-  try{
-    const res = await fetch(audioEl.src);
-    const buf = await res.arrayBuffer();
-    await buildWaveform(buf);
-  }catch(e){}
-}
-
-audioEl.addEventListener('timeupdate', () => {
-  if(!audioDuration) return;
-  progress.style.width = (audioEl.currentTime/audioDuration*100)+'%';
-  timeCur.textContent = fmt(audioEl.currentTime);
-  drawWaveform();
+/* Obtener duración cuando el audio carga */
+audioEl.addEventListener('loadedmetadata', () => {
+  audioDuration       = audioEl.duration;
+  timeTot.textContent = fmt(audioDuration);
 });
+audioEl.addEventListener('play', () => { initAnalyser(); });
+/* Primer clic en cualquier parte = AudioContext desbloqueado */
+document.addEventListener('click', initAnalyser, { once: true });
+
 
 track.addEventListener('click', e => {
   if(!audioDuration) return;
+  initAnalyser();
   const rect = track.getBoundingClientRect();
-  audioEl.currentTime = ((e.clientX-rect.left)/rect.width)*audioDuration;
+  audioEl.currentTime = ((e.clientX - rect.left) / rect.width) * audioDuration;
 });
 
+
 window.seekTo = function(ms){
-  let idx=0; for(let i=0; i<LYRICS.length; i++){ if((LYRICS[i].startMs??i*3000)<=ms) idx=i; }
-  if(currentIdx!==idx){ currentIdx=idx; updateLines(); }
-  audioEl.currentTime = ms/1000;
-  if(audioDuration){
-    progress.style.width=(audioEl.currentTime/audioDuration*100)+'%';
-    timeCur.textContent=fmt(audioEl.currentTime);
-    drawWaveform();
+  let newIdx = 0;
+  for(let i = 0; i < LYRICS.length; i++){
+    const s = LYRICS[i].startMs;
+    if(s !== null && s <= ms) newIdx = i;
+    else if(s === null && i*3000 <= ms) newIdx = i;
   }
+  if(currentIdx !== newIdx){ currentIdx = newIdx; updateLines(); }
+  audioEl.currentTime = ms / 1000;
 };
 
-window.IS_RENDERING = false;
 
-/* ── AnalyserNode para visualización en tiempo real ── */
-let audioCtxP = null, analyserP = null;
-window._freqDataP = null;
-
-function initAnalyserPortrait(){
-  if(audioCtxP){ audioCtxP.resume(); return; }
-  try{
-    audioCtxP  = new (window.AudioContext || window.webkitAudioContext)();
-    analyserP  = audioCtxP.createAnalyser();
-    analyserP.fftSize = 256;
-    analyserP.smoothingTimeConstant = 0.8;
-    const src  = audioCtxP.createMediaElementSource(audioEl);
-    src.connect(analyserP);
-    analyserP.connect(audioCtxP.destination);
-    window._freqDataP = new Uint8Array(analyserP.frequencyBinCount);
-  }catch(e){}
-}
-audioEl.addEventListener('play', initAnalyserPortrait);
-/* Un clic en cualquier parte desbloquea el audio analizado */
-document.addEventListener('click', initAnalyserPortrait, { once: true });
-
-/* ── THREE.JS GALAXY (Portrait) ── */
-(function(){
-  const threeCanvas = document.getElementById('three-bg');
-  const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
-
-  const scene  = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 100);
-  camera.position.set(0, 2.5, 6);
-  camera.lookAt(0, 0, 0);
-
-  let points   = null;
-  let currentVisualType = 'galaxy';
-
-  function rebuildVisualizer(ar, ag, ab){
-    if(points){ points.geometry.dispose(); points.material.dispose(); scene.remove(points); }
-
-    const COUNT      = 7000;
-    const positions  = new Float32Array(COUNT * 3);
-    const colors     = new Float32Array(COUNT * 3);
-
-    const cCore  = new THREE.Color(1.0,  0.95, 0.85); 
-    const cMid   = new THREE.Color(ar/255, ag/255, ab/255);
-    const cEdge  = new THREE.Color(ar/255*0.4, ag/255*0.4, ab/255*0.4);
-
-    if(currentVisualType === 'galaxy'){
-      const ARMS       = 3;
-      const RADIUS     = 5.5;
-      const SPIN       = 2.2;
-      const RANDOM_POW = 3.0;
-      const RAND_SCALE = 0.22;
-
-      for(let i = 0; i < COUNT; i++){
-        const i3 = i * 3, r = Math.sqrt(Math.random()) * RADIUS, arm = (i % ARMS) / ARMS * Math.PI * 2, ang = arm + r * SPIN;
-        const spread = RAND_SCALE * r;
-        const rx = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread;
-        const ry = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread * 0.25;
-        const rz = Math.pow(Math.random(), RANDOM_POW) * (Math.random()<0.5?1:-1) * spread;
-        positions[i3] = Math.cos(ang) * r + rx; positions[i3+1] = ry; positions[i3+2] = Math.sin(ang) * r + rz;
-        const t = r / RADIUS;
-        const c = t < 0.4 ? cCore.clone().lerp(cMid, t / 0.4) : cMid.clone().lerp(cEdge, (t - 0.4) / 0.6);
-        colors[i3] = c.r; colors[i3+1] = c.g; colors[i3+2] = c.b;
-      }
-    } else {
-      // CORAZÓN 3D
-      for(let i = 0; i < COUNT; i++){
-        const i3 = i * 3, t = Math.random() * Math.PI * 2;
-        const x = 16 * Math.pow(Math.sin(t), 3), y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-        const depth = (Math.random() - 0.5) * 5.0, noise = 0.8;
-        const scale = 0.14; 
-        positions[i3] = x * scale + (Math.random()-0.5)*noise;
-        positions[i3+1] = y * scale + (Math.random()-0.5)*noise + 0.5;
-        positions[i3+2] = depth * 0.1 + (Math.random()-0.5)*noise;
-        const dist = Math.sqrt(positions[i3]**2 + positions[i3+1]**2);
-        const ct = Math.min(1, dist / 2.5);
-        const c = ct < 0.5 ? cCore.clone().lerp(cMid, ct / 0.5) : cMid.clone().lerp(cEdge, (ct - 0.5) / 0.5);
-        colors[i3] = c.r; colors[i3+1] = c.g; colors[i3+2] = c.b;
-      }
-    }
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color',    new THREE.BufferAttribute(colors,    3));
-    const mat = new THREE.PointsMaterial({
-      size: 0.018, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending,
-      vertexColors: true, transparent: true, opacity: 0.9
-    });
-    points = new THREE.Points(geo, mat);
-    scene.add(points);
-  }
-
-  rebuildVisualizer(120, 180, 255);
-  window._updateGalaxyAccent = function(r,g,b){ 
-    window._lastR=r; window._lastG=g; window._lastB=b;
-    rebuildVisualizer(r,g,b); 
-  };
-
-  document.getElementById('visual-selector').addEventListener('change', (e) => {
-    currentVisualType = e.target.value;
-    rebuildVisualizer(window._lastR||120, window._lastG||180, window._lastB||255);
-  });
-
+/* ── Cámara: DIRECTO como las barras ──
+     bass   = zoom in/out (Z)
+     mid    = sway lateral (X)
+     treble = tilt vertical (Y)
+  ── */
+  let rotY  = 0;
   let clock = 0;
-  const BASE_Z = 6.0, BASE_Y = 2.5;
+  const BASE_Z = 5.5, BASE_Y = 1.8;
+  let camZ = BASE_Z, camX = 0, camY = BASE_Y;
+
 
   function galaxyLoop(){
     requestAnimationFrame(galaxyLoop);
     clock += 0.005;
 
-    let bass = 0, mid = 0;
+
+    /* 1. LEER AUDIO */
+    let bass = 0, mid = 0, treble = 0;
     const an = window._analyserNode;
     const fd = window._freqData;
     if(an && fd){
       an.getByteFrequencyData(fd);
-      for(let i = 0;  i < 6;  i++) bass   += fd[i]; 
-      for(let i = 6;  i < 20; i++) mid    += fd[i]; 
-      bass /= (6*255); mid /= (14*255);
+      for(let i = 0;  i < 6;  i++) bass   += fd[i]; // Bombos
+      for(let i = 6;  i < 20; i++) mid    += fd[i]; // Voces/Instrumentos
+      for(let i = 20; i < 60; i++) treble += fd[i]; // Brillo
+      bass /= (6*255); mid /= (14*255); treble /= (40*255);
     }
 
-    /* BALANCEO SUTIL */
+
+    /* 2. BALANCEO SUTIL (Va y viene, 0% mareo) */
     const rotationSwing = Math.sin(clock * 0.15) * 0.12; 
     if(points) points.rotation.y = rotationSwing * (1 + bass * 1.5);
 
-    /* ZOOM REACTIVO */
+
+    /* 3. ZOOM REACTIVO (Único movimiento permitido) */
     const targetZ = BASE_Z - (bass * 3.5); 
+    
+    /* 4. POSICIÓN FIJA (Sin Sway ni Tilt) */
+    const targetX = 0; 
+    const targetY = BASE_Y;
+
+
+    /* 5. LERP SOLO EN PROFUNDIDAD */
     camera.position.z += (targetZ - camera.position.z) * 0.12;
     camera.position.x = 0;
     camera.position.y = BASE_Y;
     camera.lookAt(0, 0, 0);
 
+
+    /* 6. REACCIÓN DE PARTÍCULAS */
     if(points) {
       points.material.size = 0.015 + (bass * 0.05);
       points.material.opacity = 0.5 + (mid * 0.5);
     }
 
+
     renderer.render(scene, camera);
   }
   galaxyLoop();
+
 
   window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -562,7 +740,9 @@ document.addEventListener('click', initAnalyserPortrait, { once: true });
   });
 })();
 
+
 window.IS_RENDERING = false;
+
 
 function init(){
   resizeCanvas();
@@ -573,6 +753,7 @@ function init(){
     setTimeout(advance, delay);
   }
 }
+
 
 /* ── Botón Restart ── */
 document.getElementById('btn-restart').addEventListener('click', () => {
@@ -585,14 +766,15 @@ document.getElementById('btn-restart').addEventListener('click', () => {
   window._lyricsTimeout = setTimeout(advance, delay);
 });
 
+
 audioEl.addEventListener('play', initAnalyser);
 audioEl.addEventListener('canplay', () => {
   initAnalyser();
   audioCtx?.resume();
 }, { once: true });
 
+
 setTimeout(init, 400);
-window.addEventListener('resize', drawWaveform);
 </script>
 </body>
 </html>
